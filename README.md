@@ -114,7 +114,7 @@ This creates the `.exe` files in `connect_pbl\bin\`. Run it again every time you
 cd backend
 npm install
 copy .env.example .env        (then fill in the values in .env)
-npm run createadmin           (only once: creates the admin account)
+npm run createadmin           (optional: the server also does this when it starts)
 npm run dev                   (http://localhost:9999 shows "api working")
 ```
 
@@ -128,7 +128,7 @@ npm run dev                   (open http://localhost:5173)
 
 **4. Try it**
 
-1. Log in on the **Admin** tab, create a section, upload a CSV of students and add subjects.
+1. Log in on the **Admin** tab with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `backend/.env`, create a section, upload a CSV of students and add subjects.
 2. Log in on the **Student** tab with a college roll number and the default password, then choose a new password.
 3. Open a few notes on All Notes, then open **Recently Viewed** in the sidebar.
 4. Make a student CR from the admin panel, confirm it from the student's notifications, then use the **CR** tab to approve notes.

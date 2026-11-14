@@ -9,6 +9,7 @@ import adminRouter from "./routes/adminRoute.js";
 import notesRouter from "./routes/notesRoute.js";
 import crRouter from "./routes/crRoute.js";
 import notificationRouter from "./routes/notificationRoute.js";
+import { syncAdmin } from "./utils/syncAdmin.js";
 
 // variables
 const app = express();
@@ -75,6 +76,16 @@ app.use((error , req , res , next) =>{
 //$ function to start the server (database first, then listen)
 const server = async() =>{
     await connection();
+
+    // the admin login comes from .env (ADMIN_EMAIL / ADMIN_PASSWORD) - see utils/syncAdmin.js
+    // if this fails, the server still starts (students must not be locked out because of the admin)
+    try{
+        console.log(await syncAdmin());
+    }
+    catch(error){
+        console.log("Could not update the admin account from .env:" , error.message);
+    }
+
     app.listen(port , () =>{
         console.log("Server successfully running on the port :- " , port);
     })

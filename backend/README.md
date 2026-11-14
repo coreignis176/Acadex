@@ -7,7 +7,8 @@ Express 5 + MongoDB (Mongoose) + Cloudinary, written in the same style as the Pe
 ```bash
 npm install
 # fill in .env (see .env.example)
-npm run createadmin   # once: creates the admin account from ADMIN_EMAIL / ADMIN_PASSWORD
+npm run createadmin   # optional: makes the admin account match ADMIN_EMAIL / ADMIN_PASSWORD
+                      # (the server also does this every time it starts - utils/syncAdmin.js)
 npm run dev           # http://localhost:9999  ->  "api working"
 ```
 

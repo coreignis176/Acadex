@@ -25,8 +25,9 @@ services:
         sync: false
       - key: DEFAULT_STUDENT_PASSWORD
         sync: false
-      # ADMIN_NAME / ADMIN_EMAIL / ADMIN_PASSWORD are NOT needed here: only createAdmin.js uses them,
-      # and it runs once on your own computer (npm run createadmin)
+      # ADMIN_NAME / ADMIN_EMAIL / ADMIN_PASSWORD are optional here. When the server starts it makes the
+      # admin account match them (utils/syncAdmin.js). If they are missing it changes nothing.
+      # We keep them only in the local .env: the live site uses the same database, so it gets the same admin.
       - key: CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
