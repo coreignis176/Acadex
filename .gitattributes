@@ -1,0 +1,6 @@
+# line endings
+# .sh files run on the Linux server (Render): they MUST use Linux line endings (LF),
+# otherwise bash fails with "command not found" errors
+*.sh text eol=lf
+# .bat files run on Windows
+*.bat text eol=crlf
