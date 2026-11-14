@@ -14,7 +14,8 @@ import { setUser } from "../slice/UserSlice";
 // ---------------------------------------------------------------------------
 
 // the backend address: taken from the .env file (VITE_BACKEND_URL), or the local server if it is not set
-const base_url = import.meta.env.VITE_BACKEND_URL || "http://localhost:9999";
+// ( .replace(/\/+$/ , "") removes a "/" typed at the end, so links never become "...com//user/login" )
+const base_url = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9999").trim().replace(/\/+$/ , "");
 
 // one URL for every backend route
 const API_URL = {

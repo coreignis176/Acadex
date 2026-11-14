@@ -135,6 +135,24 @@ Keep the backend terminal visible during a demo. It shows whether C / C++ did th
 
 ---
 
+## Going live (Render + Vercel)
+
+The **backend goes on Render** (a Linux server, so it can compile and run our C / C++ programs) and the **frontend goes on Vercel**.
+
+1. **MongoDB Atlas:** *Network Access → Add IP Address → Allow access from anywhere (`0.0.0.0/0`)*. Render's address changes, so it can't be one fixed IP.
+2. **Backend on Render:** *New → Blueprint → choose this repository*. Render reads [`render.yaml`](render.yaml), installs the packages and runs [`connect_pbl/compile.sh`](connect_pbl/compile.sh) to compile the C / C++ programs for Linux. Fill in the values it asks for (the same ones as `backend/.env`). Leave `FRONTEND_URL` as a placeholder for now. When it is live, open `https://<your-backend>.onrender.com/`. It should say `api working`.
+3. **Frontend on Vercel:** *Add New → Project → import this repository*, set **Root Directory = `frontend`**, and add the environment variable `VITE_BACKEND_URL = https://<your-backend>.onrender.com`. Deploy.
+4. **Connect them:** on Render, set `FRONTEND_URL = https://<your-site>.vercel.app` and save. Render restarts the backend.
+5. **Check:** log in on the Vercel site. In Render's **Logs**, there should be no line ending in `... JavaScript ... instead`.
+
+Things to know:
+
+* If the live backend uses the same Atlas database as your computer, the admin account and all data are already there. Otherwise run `npm run createadmin` once on your computer with `DATABASE_URL` pointing to that database.
+* On Render's free plan the backend sleeps after about 15 minutes with no visitors. The first request after that takes up to a minute, so open the site a minute before a demo.
+* The frontend and backend are on two different websites, so the login cookie is a "third-party" cookie. Chrome and Edge accept it. Safari, Brave and private / incognito windows may block it, and then login fails. Demo in a normal Chrome or Edge window.
+
+---
+
 ## Testing a C / C++ program on its own
 
 Every program reads plain lines, so you can run it in a terminal and type the input yourself. The comment at the top of each file explains its input and output with examples. For example:

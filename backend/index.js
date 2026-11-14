@@ -15,7 +15,10 @@ const app = express();
 const port = process.env.PORT || 9999;
 
 // only these websites may call the API (with cookies)
-const allowedOrigins = [process.env.FRONTEND_URL , "http://localhost:5173"];
+// the browser sends the address WITHOUT a "/" at the end, so we remove one if it was typed in .env
+// ( /\/+$/ means "one or more / at the very end" )
+const frontendUrl = (process.env.FRONTEND_URL || "").trim().replace(/\/+$/ , "");
+const allowedOrigins = [frontendUrl , "http://localhost:5173"];
 
 // middlewares
 // cors decides which websites may call this API from the browser.
