@@ -1,14 +1,110 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { LuCircleAlert, LuCircleCheck, LuDownload, LuFileSpreadsheet, LuUpload, LuX } from "react-icons/lu";
+import { LuCircleAlert, LuCircleCheck, LuDownload, LuFileSpreadsheet, LuKeyboard, LuPlus, LuTrash2, LuUpload, LuX } from "react-icons/lu";
 import { Modal } from "../../components/Modal";
 import { setSectionPopup } from "../../store/slice/PortalSlice";
 import { useAddsectionMutation } from "../../store/Api/Api";
-import { CSV_COLUMNS, MAX_CSV_BYTES, readStudentCsv, downloadCsvTemplate } from "../../utils/csv";
+import { CSV_COLUMNS, MAX_CSV_BYTES, MAX_CSV_ROWS, readStudentCsv, readTypedStudents, downloadCsvTemplate } from "../../utils/csv";
 import { fileSize } from "../../utils/format";
+
+// the two ways to give the student list
+const SOURCES = [
+    {value:"csv" , label:"Upload CSV" , icon:LuUpload},
+    {value:"manual" , label:"Type manually" , icon:LuKeyboard}
+];
+
+// two buttons at the top of the student list: "Upload CSV" or "Type manually"
+const SourceTabs = ({source , onChange}) =>{
+    return (
+        <div className="inline-flex rounded-xl border border-line bg-canvas p-1" role="tablist" aria-label="How to add students">
+            {SOURCES.map((option) =>{
+                const Icon = option.icon;
+                const active = source === option.value;
+                // the picked tab is white, the other one is grey
+                let tabClass = "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm text-muted hover:text-ink";
+                if(active) tabClass = "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm bg-white text-ink font-medium shadow-sm";
+                return (
+                    <button key={option.value} type="button" role="tab" aria-selected={active} onClick={() => onChange(option.value)} className={tabClass}>
+                        <Icon className="w-4 h-4"/> {option.label}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
+
+// the students typed by hand: one line per student (name , class roll no , college roll no)
+// rows       = what is typed: [{id , name , classRollNo , collegeRollNo}]
+// errorsByRow= {rowNumber:[messages]} -> shown under that line
+const ManualStudents = ({rows , errorsByRow , focusId , onChangeCell , onAddRow , onRemoveRow}) =>{
+    const input = "w-full px-3 py-2 rounded-lg border bg-white text-sm focus:outline-none focus:border-primary";
+
+    //$ function for the Enter key: Enter on the LAST line adds a new line (it never submits the form)
+    const handleKeyDown = (event , index) =>{
+        if(event.key !== "Enter") return;
+        event.preventDefault();
+        if(index === rows.length - 1) onAddRow();
+    }
+
+    return (
+        <div className="rounded-xl border border-line overflow-hidden">
+            {/* column names (hidden on small screens, there every box has its own placeholder) */}
+            <div className="hidden sm:grid grid-cols-[2.5rem_1fr_9rem_11rem_2.5rem] gap-2 px-3 py-2 bg-canvas text-xs text-muted">
+                <span>#</span><span>Student Name</span><span>Class Roll No.</span><span>College Roll No.</span><span/>
+            </div>
+
+            <ol className="max-h-80 overflow-auto thin-scroll divide-y divide-line">
+                {rows.map((row , index) =>{
+                    const rowNumber = index + 1;
+                    const problems = errorsByRow[rowNumber] || [];
+                    // a line with a problem gets a red border on its boxes
+                    let border = "border-line";
+                    if(problems.length > 0) border = "border-bad/50";
+
+                    return (
+                        <li key={row.id} className="px-3 py-2.5">
+                            <div className="grid grid-cols-[2rem_1fr_2.5rem] sm:grid-cols-[2.5rem_1fr_9rem_11rem_2.5rem] gap-2 items-center">
+                                <span className="text-sm text-muted tabular-nums">{rowNumber}</span>
+                                <input value={row.name} onChange={(event) => onChangeCell(row.id , "name" , event.target.value)}
+                                    onKeyDown={(event) => handleKeyDown(event , index)} autoFocus={row.id === focusId}
+                                    placeholder="Student name, e.g. Priya Negi" aria-label={`Student ${rowNumber} name`} className={`${input} ${border}`}/>
+                                {/* on small screens the delete button sits next to the name, the roll numbers go below */}
+                                <button type="button" onClick={() => onRemoveRow(row.id)} aria-label={`Remove student ${rowNumber}`}
+                                    className="sm:hidden p-2 rounded-md text-muted hover:text-bad hover:bg-bad-soft justify-self-center"><LuTrash2 className="w-4 h-4"/></button>
+                                <input value={row.classRollNo} onChange={(event) => onChangeCell(row.id , "classRollNo" , event.target.value)}
+                                    onKeyDown={(event) => handleKeyDown(event , index)}
+                                    placeholder="Class roll, e.g. 13" aria-label={`Student ${rowNumber} class roll number`}
+                                    className={`${input} ${border} uppercase col-start-2 sm:col-start-auto`}/>
+                                <input value={row.collegeRollNo} onChange={(event) => onChangeCell(row.id , "collegeRollNo" , event.target.value)}
+                                    onKeyDown={(event) => handleKeyDown(event , index)}
+                                    placeholder="College roll, e.g. BT25ML013" aria-label={`Student ${rowNumber} college roll number`}
+                                    className={`${input} ${border} uppercase col-start-2 sm:col-start-auto`}/>
+                                <button type="button" onClick={() => onRemoveRow(row.id)} aria-label={`Remove student ${rowNumber}`}
+                                    className="hidden sm:block p-2 rounded-md text-muted hover:text-bad hover:bg-bad-soft justify-self-center"><LuTrash2 className="w-4 h-4"/></button>
+                            </div>
+                            {problems.length > 0 && (
+                                <ul className="mt-1.5 sm:ml-[3rem] ml-[2.5rem] text-bad text-xs leading-snug">
+                                    {problems.map((message) => <li key={message}>{message}</li>)}
+                                </ul>
+                            )}
+                        </li>
+                    )
+                })}
+            </ol>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-canvas border-t border-line">
+                <button type="button" onClick={onAddRow} disabled={rows.length >= MAX_CSV_ROWS}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-line text-sm font-medium hover:border-primary/40 hover:text-primary disabled:opacity-50">
+                    <LuPlus className="w-4 h-4"/> Add student
+                </button>
+                <p className="text-xs text-muted">Press Enter on the last line to add another. Empty lines are ignored.</p>
+            </div>
+        </div>
+    )
+}
 
 // returns the first file of a file list (from a file input or a drag and drop), or null when there is none
 const firstFile = (fileList) =>{
@@ -116,9 +212,10 @@ const CsvPreview = ({rows , visibleRows , problemCount , onlyProblems , setOnlyP
     )
 }
 
-// popup to create a new section and register its students from a CSV file
+// popup to create a new section and register its students from a CSV file OR typed by hand
 // payload: {mode:"add" , courseId , year , label}
-// 1. section name  2. student CSV  3. preview + validation  4. confirm -> section + students saved together
+// 1. section name  2. student CSV or typed list  3. checks  4. confirm -> section + students saved together
+// (the server gets the same {row , name , classRollNo , collegeRollNo} list both ways)
 //
 // How the CSV preview works:
 // - the admin picks a .csv file, the browser reads it and readStudentCsv() turns it into rows ("parsed")
@@ -136,10 +233,52 @@ export const AddSectionPopup = () =>{
     const [parsed , setParsed] = useState(null);               // what the CSV reader found: {students , problems} or {error}
     const [serverErrors , setServerErrors] = useState({});     // row number -> [messages] returned by the server
     const [onlyProblems , setOnlyProblems] = useState(false);  // is "Only show problems" ticked?
+    const [source , setSource] = useState("csv");              // "csv" = upload a file , "manual" = type the students
+    const nextId = useRef(2);                                  // a new id for every typed line (React needs a key that never changes)
+    const [typedRows , setTypedRows] = useState([{id:1 , name:"" , classRollNo:"" , collegeRollNo:""}]);
+    const [focusId , setFocusId] = useState(null);             // the line that was just added gets the cursor
     const {register , handleSubmit , formState:{errors}} = useForm({mode:"onChange"});
 
     //$ function to close the popup
     const close = () => dispatch(setSectionPopup(false));
+
+    //$ function to switch between "Upload CSV" and "Type manually"
+    // (both lists are kept, so switching back does not lose anything; old server messages are cleared)
+    const handleSource = (value) =>{
+        setSource(value);
+        setServerErrors({});
+        setOnlyProblems(false);
+    }
+
+    //$ function to change one box of one typed line , e.g. ("name" of line 3 = "Priya")
+    const handleChangeCell = (id , key , value) =>{
+        setServerErrors({});          // the list changed -> old server messages may be wrong now
+        setTypedRows((current) => current.map((row) =>{
+            if(row.id !== id) return row;
+            // copy the line and change only one box
+            const changed = Object.assign({} , row);
+            changed[key] = value;
+            return changed;
+        }));
+    }
+
+    //$ function to add an empty line at the end (and put the cursor in it)
+    const handleAddRow = () =>{
+        if(typedRows.length >= MAX_CSV_ROWS) return;
+        const id = nextId.current;
+        nextId.current = id + 1;
+        setTypedRows((current) => current.concat([{id , name:"" , classRollNo:"" , collegeRollNo:""}]));
+        setFocusId(id);
+    }
+
+    //$ function to remove a typed line (the last line is only emptied, so there is always one line)
+    const handleRemoveRow = (id) =>{
+        setServerErrors({});
+        setTypedRows((current) =>{
+            if(current.length === 1) return [{id:current[0].id , name:"" , classRollNo:"" , collegeRollNo:""}];
+            return current.filter((row) => row.id !== id);
+        });
+    }
 
     //$ function to read and validate the chosen CSV file
     const handleFile = async (picked) =>{
@@ -183,11 +322,17 @@ export const AddSectionPopup = () =>{
         setServerErrors({});
     }
 
-    // the preview rows: browser checks + conflicts the server reported (e.g. roll number already registered)
+    // the students of the chosen way: from the CSV file , or the lines typed by hand
+    // (both are checked with the same rules - see utils/csv.js)
     let students = [];
-    if(parsed && parsed.students){
+    if(source === "manual"){
+        students = readTypedStudents(typedRows).students;
+    }
+    else if(parsed && parsed.students){
         students = parsed.students;
     }
+
+    // the rows: browser checks + conflicts the server reported (e.g. roll number already registered)
     const rows = [];
     for(const student of students){
         const messagesFromServer = serverErrors[student.row] || [];
@@ -290,8 +435,19 @@ export const AddSectionPopup = () =>{
         fileError = parsed.error;
     }
 
+    // the problems of every typed line: {rowNumber:[messages]} (browser checks + server answers)
+    const errorsByRow = {};
+    for(const row of rows){
+        if(row.errors.length > 0) errorsByRow[row.row] = row.errors;
+    }
+
     // text of the main button
     let submitText = "Upload a valid CSV to continue";
+    if(source === "manual"){
+        submitText = "Type at least one student to continue";
+        if(problemCount === 1) submitText = "Fix the student marked in red";
+        else if(problemCount > 1) submitText = `Fix the ${problemCount} students marked in red`;
+    }
     if(saving){
         submitText = "Creating section...";
     }
@@ -302,7 +458,7 @@ export const AddSectionPopup = () =>{
     }
 
     return (
-        <Modal onClose={close} width="max-w-3xl" title="Add section" description={`Create a section in ${popup.label} and register its students from a CSV file.`}>
+        <Modal onClose={close} width="max-w-3xl" title="Add section" description={`Create a section in ${popup.label} and register its students from a CSV file or by typing them in.`}>
             <form onSubmit={handleSubmit(handleOnSubmit)} className="flex flex-col gap-5" noValidate>
 
                 {/* 1. name */}
@@ -318,30 +474,40 @@ export const AddSectionPopup = () =>{
                     {errors.name && <p className="text-bad text-xs mt-1">{errors.name.message}</p>}
                 </div>
 
-                {/* 2. CSV */}
+                {/* 2. the student list: upload a CSV file OR type the students */}
                 <div>
-                    <div className="flex flex-wrap items-end justify-between gap-2 mb-1.5">
-                        <div>
-                            <p className="text-sm font-medium">Student list (CSV)</p>
-                            <p className="text-xs text-muted">Columns: {CSV_COLUMNS.map((column) => column.label).join(", ")}</p>
-                        </div>
-                        <button type="button" onClick={downloadCsvTemplate} className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
-                            <LuDownload className="w-4 h-4"/> Download template
-                        </button>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                        <p className="text-sm font-medium">Student list</p>
+                        <SourceTabs source={source} onChange={handleSource}/>
                     </div>
 
-                    {fileBox}
+                    {source === "csv" && (
+                        <>
+                            <div className="flex flex-wrap items-end justify-between gap-2 mb-1.5">
+                                <p className="text-xs text-muted">Columns: {CSV_COLUMNS.map((column) => column.label).join(", ")}</p>
+                                <button type="button" onClick={downloadCsvTemplate} className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+                                    <LuDownload className="w-4 h-4"/> Download template
+                                </button>
+                            </div>
+                            {fileBox}
+                        </>
+                    )}
+
+                    {source === "manual" && (
+                        <ManualStudents rows={typedRows} errorsByRow={errorsByRow} focusId={focusId}
+                            onChangeCell={handleChangeCell} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}/>
+                    )}
                 </div>
 
                 {/* file-level problem */}
-                {fileError && (
+                {source === "csv" && fileError && (
                     <div className="flex gap-2.5 rounded-xl bg-bad-soft text-bad px-4 py-3 text-sm">
                         <LuCircleAlert className="w-5 h-5 shrink-0"/> <p>{fileError}</p>
                     </div>
                 )}
 
-                {/* 3. preview */}
-                {rows.length > 0 && (
+                {/* 3. preview of the CSV file (typed students show their problems right under each line) */}
+                {source === "csv" && rows.length > 0 && (
                     <CsvPreview rows={rows} visibleRows={visibleRows} problemCount={problemCount}
                         onlyProblems={onlyProblems} setOnlyProblems={setOnlyProblems}/>
                 )}

@@ -14,7 +14,7 @@ export const CSV_COLUMNS = [
     {key:"collegeRollNo" , label:"College Roll Number" , aliases:["collegerollnumber" , "collegerollno" , "collegeroll"]}
 ];
 
-const MAX_CSV_ROWS = 500;
+export const MAX_CSV_ROWS = 500;
 export const MAX_CSV_BYTES = 1024 * 1024;     // 1 MB
 
 // the three column labels, used inside error messages
@@ -198,6 +198,44 @@ export const readStudentCsv = (text) =>{
     if(students.length > MAX_CSV_ROWS) return {error:`The file has ${students.length} students. Upload at most ${MAX_CSV_ROWS} at a time.`};
 
     // ----- field checks + duplicates inside the file -----
+    const problems = checkStudentRows(students);
+
+    // preview in class roll order ({numeric:true} puts "2" before "10")
+    students.sort((first , second) => first.classRollNo.localeCompare(second.classRollNo , undefined , {numeric:true}));
+
+    // {students , problems} is short for {students:students , problems:problems}
+    return {students , problems};
+}
+
+
+//$ function to tidy the students the admin TYPED in "Add section" (instead of a CSV file)
+// rows = [{name , classRollNo , collegeRollNo}] in the order they were typed
+// gives back the students in the same shape as readStudentCsv: {row , name , classRollNo , collegeRollNo , errors}
+//   - row = the number shown next to the student in the form (1 , 2 , 3 ...)
+//   - a row where nothing was typed is skipped (it is just an empty line in the form)
+// then checks them with the SAME rules as a CSV file (checkStudentRows)
+export const readTypedStudents = (rows) =>{
+    const students = [];
+    for(let i = 0; i < rows.length; i++){
+        const typed = rows[i];
+        const name = String(typed.name || "").trim().replace(/\s+/g , " ");
+        const classRollNo = String(typed.classRollNo || "").trim().toUpperCase();
+        const collegeRollNo = String(typed.collegeRollNo || "").trim().toUpperCase();
+
+        if(!name && !classRollNo && !collegeRollNo) continue;      // an empty line -> skip it
+
+        students.push({row:i + 1 , name , classRollNo , collegeRollNo , errors:[]});
+    }
+
+    const problems = checkStudentRows(students);
+    return {students , problems};
+}
+
+
+//$ function to check every student (name , roll numbers , and roll numbers used twice in the list)
+// adds the problems to student.errors and gives back how many students have at least one problem
+// used for a CSV file (readStudentCsv) AND for students typed by hand (readTypedStudents)
+export const checkStudentRows = (students) =>{
     // seenClass["12"] = 4 means class roll number 12 was first used on row 4
     const seenClass = {};
     const seenCollege = {};
@@ -218,16 +256,12 @@ export const readStudentCsv = (text) =>{
         else seenCollege[student.collegeRollNo] = student.row;
     }
 
-    // preview in class roll order ({numeric:true} puts "2" before "10")
-    students.sort((first , second) => first.classRollNo.localeCompare(second.classRollNo , undefined , {numeric:true}));
-
     // how many students have at least one error
     let problems = 0;
     for(const student of students){
         if(student.errors.length > 0) problems++;
     }
-    // {students , problems} is short for {students:students , problems:problems}
-    return {students , problems};
+    return problems;
 }
 
 
