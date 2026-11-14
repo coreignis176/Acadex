@@ -25,12 +25,8 @@ services:
         sync: false
       - key: DEFAULT_STUDENT_PASSWORD
         sync: false
-      - key: ADMIN_NAME
-        sync: false
-      - key: ADMIN_EMAIL
-        sync: false
-      - key: ADMIN_PASSWORD
-        sync: false
+      # ADMIN_NAME / ADMIN_EMAIL / ADMIN_PASSWORD are NOT needed here: only createAdmin.js uses them,
+      # and it runs once on your own computer (npm run createadmin)
       - key: CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY

@@ -140,7 +140,7 @@ Keep the backend terminal visible during a demo. It shows whether C / C++ did th
 The **backend goes on Render** (a Linux server, so it can compile and run our C / C++ programs) and the **frontend goes on Vercel**.
 
 1. **MongoDB Atlas:** *Network Access → Add IP Address → Allow access from anywhere (`0.0.0.0/0`)*. Render's address changes, so it can't be one fixed IP.
-2. **Backend on Render:** *New → Blueprint → choose this repository*. Render reads [`render.yaml`](render.yaml), installs the packages and runs [`connect_pbl/compile.sh`](connect_pbl/compile.sh) to compile the C / C++ programs for Linux. Fill in the values it asks for (the same ones as `backend/.env`). Leave `FRONTEND_URL` as a placeholder for now. When it is live, open `https://<your-backend>.onrender.com/`. It should say `api working`.
+2. **Backend on Render:** *New → Blueprint → choose this repository*. Render reads [`render.yaml`](render.yaml), installs the packages and runs [`connect_pbl/compile.sh`](connect_pbl/compile.sh) to compile the C / C++ programs for Linux. Fill in the values it asks for (the same ones as `backend/.env`; the `ADMIN_*` values are not needed on the server). Leave `FRONTEND_URL` as a placeholder for now. When it is live, open `https://<your-backend>.onrender.com/`. It should say `api working`.
 3. **Frontend on Vercel:** *Add New → Project → import this repository*, set **Root Directory = `frontend`**, and add the environment variable `VITE_BACKEND_URL = https://<your-backend>.onrender.com`. Deploy.
 4. **Connect them:** on Render, set `FRONTEND_URL = https://<your-site>.vercel.app` and save. Render restarts the backend.
 5. **Check:** log in on the Vercel site. In Render's **Logs**, there should be no line ending in `... JavaScript ... instead`.
