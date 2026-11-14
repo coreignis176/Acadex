@@ -2,6 +2,8 @@
 
 A notes-sharing website for a college class. Students upload photos of their handwritten notes, the class representative (CR) approves them, and everyone in the same year can find, read, like and download them.
 
+**Live website:** https://acadex-chi.vercel.app  ·  **Backend API:** https://acadex-backend-fxkj.onrender.com
+
 This is a **PBL project** for **Data Structures in C** and **Object-Oriented Programming in C++**.
 The website (React + Node.js) is the outer shell. The real logic of the main features runs inside our own **C and C++ programs**, which the backend runs on every request.
 
