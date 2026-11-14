@@ -1,0 +1,183 @@
+============================================================
+ IDEA: CR Approvals ko QUEUE (FIFO) se chalana  - C mein
+ Decision : (a) STRICT QUEUE  -> CR sirf FRONT wala note review kar sakta hai
+ Queue    : struct se banegi (struct Queue)
+ Status   : BAN GAYA aur website se JUD GAYA - c/notes_queue.c -> backend/connect_pbl/notesQueue.js
+ Date     : 2026-11-11
+============================================================
+
+
+1. MAQSAD
+------------------------------------------------------------
+Student notes submit karta hai -> notes "pending" ho jaate hain
+-> section ka CR approve / reject karta hai.
+
+Rule: JO SABSE PEHLE BHEJA, USKA SABSE PEHLE REVIEW (First In First Out).
+
+    Submit hue:  Rahul (10:00) -> Priya (10:05) -> Aman (10:20)
+
+    FRONT -> [ Rahul ] [ Priya ] [ Aman ] <- REAR
+
+    CR ko pehle Rahul ka note -> approve/reject -> DEQUEUE -> front pe Priya
+    Naya submit (Neha, 10:30) -> ENQUEUE -> Aman ke PEECHE
+
+Yeh "line" HUMARA C PROGRAM (queue) sambhalega, JavaScript nahi.
+
+Abhi yeh kahan hota hai:
+    frontend/src/pages/cr/Approvals.jsx  (line 143-145)
+        pending.sort(... createdAt ...)   <- JavaScript sort, oldest first
+    Aur abhi CR list mein se KOI BHI note review kar sakta hai (line tod ke).
+
+
+2. STRICT QUEUE (decision a) - matlab kya
+------------------------------------------------------------
+    - CR sirf FRONT wala note approve / reject kar sakta hai
+    - Baaki notes line mein DIKHENGE, par unpe approve/reject button NAHI
+    - "Review Next" -> front wala note khulta hai
+    - Beech se koi note nahi nikal sakta (queue mein dequeue sirf front se)
+
+Kyun strict?
+    - Students ke saath FAIR: pehle bheja -> pehle number
+    - Student ko "Your notes are #3 in line" dikha sakte hain,
+      aur yeh number tabhi bharose ka hai jab line koi tod na sake
+    - Viva: "enqueue jab student submit kare, dequeue jab CR review kare"
+
+
+3. QUEUE OPERATIONS -> PROJECT MEIN MATLAB
+------------------------------------------------------------
+    | Operation   | Project mein                                     |
+    |-------------|--------------------------------------------------|
+    | enqueue     | student ne notes submit kiye -> line mein peeche |
+    | peek/front  | CR ko "Next to review" wala note                 |
+    | dequeue     | CR ne approve / reject kiya -> line se bahar     |
+    | size        | "5 notes waiting"                                |
+    | isEmpty     | "No submissions waiting"                         |
+    | traverse    | line mein har note ki position (#1 , #2 , #3 ..) |
+
+C mein structure (idea):
+    struct Note{
+        int index;          // backend ki list mein kaunsa note (wapas pehchaanne ke liye)
+        long long time;     // kab submit hua (createdAt, milliseconds)
+        int mine;           // 1 = yeh note us student ka hai jo dekh raha hai (position ke liye)
+    };
+
+    struct Queue{
+        struct Note items[MAX];
+        int front;
+        int rear;
+    };
+
+    + functions: enqueue , dequeue , peek , isEmpty , size , display/traverse
+
+
+4. ZAROORI BAAT: C ki queue har baar nayi banti hai
+------------------------------------------------------------
+C program har request pe naya chalta hai aur khatam ho jaata hai,
+toh queue memory mein bachi nahi rehti.
+
+    - Pending notes MongoDB mein hi rahenge (status:"pending")
+    - Har request pe backend pending notes SUBMIT KE ORDER mein bhejega
+      -> C har note ko ENQUEUE karega -> phir operation chalayega
+    - DEQUEUE ka asli matlab: note ka status "pending" se
+      "approved"/"rejected" ho gaya -> agli baar woh queue mein aayega hi nahi
+
+
+5. TEEN JAGAH QUEUE KAAM AAYEGI (teeno ke liye same notes_queue program)
+------------------------------------------------------------
+(A) CR Approvals page khula -> poori line dikhao
+        backend: crController.js  getsectionnotes  (line 17)
+        C: enqueue sab -> size + line ka order (traverse) print
+
+(B) CR ne approve / reject dabaya -> STRICT check
+        backend: crController.js  reviewnote  (line 40)
+        C: enqueue sab -> PEEK front -> kya yahi note front pe hai?
+           haan -> review hone do (status badlo = dequeue)
+           nahi -> 400 "Please review the notes at the front of the line first."
+        !! Yeh check BACKEND mein hona zaroori hai. Sirf frontend mein
+           button chhupane se koi bhi seedha request bhej ke line tod sakta hai.
+
+(C) Student "Upload Notes" page pe apne pending notes ki position
+        backend: notesController.js  getmysubmissions  (line 99)
+        C: section ke pending notes enqueue (apne notes pe mine=1)
+           -> traverse karke apne har note ki position nikaalo
+        frontend: "Your notes are #3 in line"
+
+
+6. INPUT / OUTPUT FORMAT (idea)
+------------------------------------------------------------
+INPUT (backend -> C, stdin se):
+    line 1 = kaam:   line   /   front   /   position
+    line 2 = kitne pending notes hain
+    phir   = har note ki ek line (SUBMIT KE ORDER mein, pehla sabse purana)
+             index  time  mine
+
+Example (4 pending notes, index 2 aur 3 is student ke hain):
+    0 1700000100 0
+    1 1700000500 0
+    2 1700000900 1
+    3 1700001200 1
+
+--- (A) line ---                    OUTPUT:
+    line                            4          <- size
+    4                               0 1 2 3    <- front se rear tak
+    0 1700000100 0
+    ...
+
+--- (B) front ---                   OUTPUT:
+    front                           0          <- front pe index 0
+    4                               (khaali queue ho toh: -1)
+    0 1700000100 0
+    ...
+
+--- (C) position ---                OUTPUT:
+    position                        2 3        <- index 2 line mein #3 pe
+    4                               3 4        <- index 3 line mein #4 pe
+    0 1700000100 0
+    ...
+
+
+7. KAUNSI FILES BADLENGI (jab banayenge)
+------------------------------------------------------------
+    connect_pbl/c/notes_queue.c                 NAYA - struct Queue + operations
+    backend/controllers/crController.js         getsectionnotes -> line C se
+                                                reviewnote      -> STRICT front check C se
+                                                deletenote      -> (section 9 dekho)
+    backend/controllers/notesController.js      getmysubmissions -> position C se
+    frontend/src/pages/cr/Approvals.jsx         - JS wala pending.sort hatana
+                                                - sirf FRONT note pe approve/reject
+                                                - "Review Next" button
+    frontend/src/pages/student/UploadNotes.jsx  pending notes pe "#3 in line"
+
+
+8. STEPS (ek ek karke)
+------------------------------------------------------------
+    Step 1: notes_queue.c -> struct Queue + enqueue/dequeue/peek/size
+            + compile.bat + TERMINAL test ("line" kaam)
+    Step 2: getsectionnotes ko C se jodna -> Approvals page pe line C ki
+    Step 3: "front" kaam -> reviewnote mein STRICT check -> Approvals UI
+            (sirf front pe buttons + Review Next)
+    Step 4: "position" kaam -> getmysubmissions -> student ko "#3 in line"
+
+
+9. ABHI TAY KARNA BAAKI HAI (open questions)
+------------------------------------------------------------
+    [ ] Queue kaise banayenge?
+          - simple array queue
+          - circular queue (array)
+          - baad mein LINKED LIST queue (isse linked list bhi project mein aa jaayegi)
+    [ ] MAX kitna? (ek section mein ek saath kitne pending notes ho sakte hain?)
+        Queue full ho jaaye toh kya? (overflow)
+    [ ] Submit ka order kaun deta hai? Plan: backend MongoDB se pending notes
+        createdAt ke order mein laayega aur C usi order mein enqueue karega.
+        (Ya C khud time dekh ke order banaye? Woh sorting ho jaayegi, queue nahi.)
+    [ ] Do notes ka time bilkul same ho toh kaun aage?
+    [ ] Ek section mein 2 CR ho sakte hain (MAX_CR_PER_SECTION = 2).
+        Dono ek saath front wala note review karein toh? (abhi bhi reviewnote
+        "Already Reviewed" bol deta hai -> shayad yahi kaafi hai)
+    [ ] CR "delete" se PENDING note beech se hata sakta hai (deletenote).
+        Strict queue mein yeh line todna hai. Kya karein?
+          - pending note delete sirf front se?
+          - ya delete ko alag "remove" maan lein (spam / galat upload)?
+    [ ] CR ke apne notes seedha approve hote hain -> woh queue mein aate hi nahi (theek hai)
+    [ ] C program fail ho jaaye toh? Approvals page error dikhaye, ya JS fallback?
+        (demo ke time check karna ki C sach mein chal raha hai)

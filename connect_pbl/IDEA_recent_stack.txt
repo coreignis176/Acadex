@@ -1,0 +1,213 @@
+============================================================
+ IDEA: "Recently Viewed" notes ko STACK (LIFO) se chalana - C mein
+       + student portal mein NAYA "Recent / History" page
+ Status : POORA BAN GAYA aur website se JUD GAYA (2026-11-14)
+          C: c/recent_stack.c (linked list stack) | bridge: backend/connect_pbl/recentStack.js
+          backend: User.recentNotes + /notes/viewnote , /notes/getrecent , /notes/clearrecent
+          frontend: pages/student/RecentNotes.jsx (/student/history) + sidebar "Recently Viewed"
+          tay hua: sirf All Notes aur History page se khola note history mein aata hai ;
+                   deleted / rejected note dikhate waqt skip hota hai aur saved history se bhi hat jaata hai
+ Date   : 2026-11-11
+============================================================
+
+
+1. MAQSAD
+------------------------------------------------------------
+Student jo bhi note kholta hai, woh uski "history" mein SABSE UPAR aa jaaye,
+jaise browser ki history. Jo sabse LAST khola, woh sabse PEHLE dikhe.
+Yahi STACK hai: Last In First Out.
+
+    Khole:  Trees -> DBMS -> Stack basics
+
+    Stack:  [Trees] [DBMS] [Stack basics]  <- TOP
+    Page pe dikhega (top se neeche):  Stack basics , DBMS , Trees
+
+    DBMS dobara khola  -> purani jagah se hatao -> TOP pe push
+    Stack:  [Trees] [Stack basics] [DBMS]  <- TOP
+
+    Limit (jaise 10) se zyada -> sabse purana (BOTTOM) hata do
+
+Student ko fayda: "jo abhi padh raha tha, wahin wapas jao" - ek click mein.
+
+Yeh stack HUMARA C PROGRAM sambhalega, JavaScript nahi.
+
+
+2. NAYA PAGE: student tab mein "Recent / History"
+------------------------------------------------------------
+    Sidebar (student):   All Notes | Upload Notes | Recently Viewed   <- NAYA
+    URL:                 /student/history   (naam baad mein tay)
+
+Page pe:
+    - Sabse upar "Continue reading" -> stack ka TOP (peek)
+    - Neeche baaki history, top se bottom tak (traverse)
+    - Kisi note pe click -> NoteDetails popup khule (jaise All Notes mein)
+    - "Clear history" button -> stack khaali (clear)
+    - History khaali ho toh -> "Abhi tak koi note nahi khola" + All Notes ka button (isEmpty)
+
+
+3. STACK OPERATIONS -> PROJECT MEIN MATLAB
+------------------------------------------------------------
+    | Operation    | Project mein                                          |
+    |--------------|-------------------------------------------------------|
+    | push         | student ne koi note khola -> top pe                   |
+    | peek / top   | "Continue reading" wala note                          |
+    | pop          | (andar ka kaam) - duplicate / purana hatane ke liye   |
+    | isEmpty      | "No history yet" dikhana                              |
+    | isFull       | limit poori -> bottom wala hatana padega              |
+    | traverse     | History page pe top se bottom tak list                |
+    | clear        | "Clear history" button                                |
+
+C mein structure (idea):
+    struct Stack{
+        char ids[MAX][25];    // MongoDB note id = 24 characters + '\0'
+        int top;              // -1 = khaali
+    };
+    + functions: push , pop , peek , isEmpty , isFull , display , clear
+
+Notes ki id (string) hi stack mein jaayegi -> C mein strings ka stack.
+
+
+4. DO MUSHKIL KAAM, SIRF STACK OPERATIONS SE (viva ke liye important)
+------------------------------------------------------------
+Pure stack mein sirf TOP pe kaam hota hai. Lekin humein do kaam
+"beech" se aur "neeche" se karne hain:
+
+  (a) DUPLICATE: DBMS pehle se beech mein hai, dobara khola
+  (b) FULL: limit poori, sabse neeche (bottom) wala hatana hai
+
+Dono ko SIRF push/pop se karenge, ek TEMP STACK ki madad se:
+
+  (a) duplicate hatana:
+        main stack se pop karte jao -> temp stack mein push
+        jab woh id mile -> use phenk do (push mat karo)
+        temp se pop karke wapas main mein push
+        -> phir nayi id main pe push (top)
+
+  (b) bottom hatana:
+        main se sab pop -> temp mein push
+        temp ka top (= main ka bottom) phenk do
+        baaki temp se pop karke wapas main mein push
+
+Isse koi array ka beech wala index seedha nahi chhua -> stack PURE rahega.
+Viva mein seedha bol sakte hain: "do stacks se duplicate aur overflow handle kiya".
+
+
+5. ZAROORI BAAT: C ka stack har baar naya banta hai
+------------------------------------------------------------
+C program har request pe naya chalta hai aur khatam ho jaata hai,
+toh stack memory mein bacha nahi rehta. Isliye history SAVE karni padegi:
+
+    MongoDB -> User model mein naya field:
+        recentNotes: [note ids]      // BOTTOM se TOP ke order mein
+
+    Har baar:
+        backend recentNotes C ko bhejta hai
+        -> C us order mein PUSH karke stack banata hai
+        -> operation chalata hai -> naya stack wapas deta hai
+        -> backend naya stack recentNotes mein save karta hai
+
+
+6. TEEN KAAM (teeno ke liye same recent_stack program)
+------------------------------------------------------------
+(A) Student ne note khola  -> PUSH
+        frontend: NoteDetails khulte hi backend ko batao
+                  (AllNotes.jsx line 301, NotesBrowser.jsx line 226)
+        backend:  NAYA route  POST /notes/viewnote  {noteId}
+        C:        stack banao -> duplicate hatao -> full ho toh bottom hatao
+                  -> push -> naya stack print
+        backend:  user.recentNotes = naya stack -> save
+
+(B) Recent / History page khula -> TRAVERSE (top se bottom)
+        backend:  NAYA route  GET /notes/getrecent
+        C:        stack banao -> top se bottom tak ids print
+        backend:  un ids ke notes MongoDB se laao, C ke order mein lagao
+                  (note delete / reject ho gaya ho toh skip)
+        frontend: pehla = "Continue reading" (peek), baaki list
+
+(C) "Clear history" -> CLEAR
+        backend:  NAYA route  POST /notes/clearrecent
+        C:        clear -> khaali stack
+        backend:  user.recentNotes = []
+
+
+7. INPUT / OUTPUT FORMAT (idea)
+------------------------------------------------------------
+INPUT (backend -> C, stdin se):
+    line 1 = kaam:   push   /   show   /   clear
+    line 2 = (sirf push mein) nayi note id
+    phir   = stack mein kitni ids hain
+    phir   = har line pe ek id, BOTTOM se TOP ke order mein
+
+(ids chhoti karke likhi hain, asli mein 24 characters ki hongi)
+
+--- (A) push "DBMS" (pehle se beech mein hai) ---
+    INPUT:                    OUTPUT (naya stack, bottom se top):
+    push                      3
+    DBMS                      Trees
+    3                         Stack
+    Trees                     DBMS        <- DBMS ab TOP pe
+    DBMS
+    Stack
+
+--- (B) show ---
+    INPUT:                    OUTPUT (pehle count , phir top se bottom, page isi order mein):
+    show                      3
+    3                         DBMS
+    Trees                     Stack
+    Stack                     Trees
+    DBMS
+    (2026-11-14: show bhi pehle count deta hai , push jaisa - backend check kar sake)
+
+--- (C) clear ---
+    INPUT:                    OUTPUT:
+    clear                     0
+    3
+    ...
+
+
+8. KAUNSI FILES BADLENGI / BANENGI (jab banayenge)
+------------------------------------------------------------
+    connect_pbl/c/recent_stack.c                NAYA - struct Stack + operations
+    backend/modules/User.js                     naya field  recentNotes
+    backend/controllers/notesController.js      naye functions: viewnote , getrecent , clearrecent
+    backend/routes/notesRoute.js                3 naye routes
+    frontend/src/store/Api/Api.jsx              3 nayi API calls
+    frontend/src/pages/student/RecentNotes.jsx  NAYA PAGE (Recent / History)
+    frontend/src/App.jsx                        naya route  /student/history
+    frontend/src/components/portal/portalLinks.js   student sidebar mein naya link
+    frontend/src/pages/student/AllNotes.jsx     note khulte hi "viewnote" bhejna
+    (aur jahan-jahan student note kholta hai)
+
+
+9. STEPS (ek ek karke)
+------------------------------------------------------------
+    Step 1: recent_stack.c -> struct Stack + push/pop/peek/isEmpty/isFull
+            + "push" kaam (temp stack se duplicate + bottom hatana)
+            + compile.bat + TERMINAL test
+    Step 2: "show" aur "clear" kaam -> terminal test
+    Step 3: User.js mein recentNotes + backend routes (viewnote, getrecent, clearrecent)
+    Step 4: AllNotes mein note khulte hi viewnote bhejna
+    Step 5: naya Recent / History page + sidebar link
+
+
+10. ABHI TAY KARNA BAAKI HAI (open questions)
+------------------------------------------------------------
+    [x] Limit (MAX) kitni?  -> 10  (tay: 2026-11-14)
+    [ ] Page / sidebar ka naam: "Recently Viewed" ya "History"? URL kya?
+    [ ] Kahan-kahan se khola note history mein aaye?
+          - sirf All Notes se?
+          - apne Upload Notes (My Submissions) se bhi? (shayad nahi,
+            woh apne hi notes hain, aur pending bhi ho sakte hain)
+          - History page se dobara khola -> phir se top pe? (haan, suggestion)
+    [ ] Note delete ho gaya (CR ne hataya) ya reject ho gaya -> history se
+        bhi hatana hai, ya sirf dikhate waqt skip?
+    [x] Stack kaisa?  -> LINKED LIST stack , LinkedList.c ke style mein  (tay: 2026-11-14)
+          typedef struct Node{ char id[25]; struct Node* next; } ND;   ND** Head
+          push = insert at front , pop = delete from front , top = Head
+          (section 3 wala "char ids[MAX][25]" array plan ab NAHI chalega)
+          kyun: website mein abhi linked list kahin nahi thi , ab stack + linked list dono dikhenge
+    [ ] Ek history item hatana ("x" button) chahiye? (woh bhi temp stack se hoga)
+    [ ] C program fail ho jaaye toh?
+          note kholna NAHI rukna chahiye (history bas update na ho + log)
+          history page pe error dikhe ya khaali?
+        (demo ke time check karna ki C sach mein chal raha hai)

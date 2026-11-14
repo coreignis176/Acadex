@@ -1,0 +1,19 @@
+# Frontend Dependency directories
+node_modules/
+
+# Build output
+dist/
+build/
+*.log
+
+# Environment files
+.env
+.env.local
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
