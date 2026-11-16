@@ -8,7 +8,6 @@ import { Loader } from "../../components/Loader";
 import { NoData } from "../../components/NoData";
 import { dayLabel } from "../../utils/format";
 
-// the filter chips at the top of the page
 const FILTERS = [
     {key:"all" , label:"All"},
     {key:"unread" , label:"Unread"},
@@ -17,18 +16,13 @@ const FILTERS = [
     {key:"section" , label:"Section"}
 ];
 
-// true when a notification should be shown for the chosen filter chip
 const matchesFilter = (notification , filter) =>{
     if(filter === "all") return true;
     if(filter === "unread") return !notification.read;
-    // "Section" also covers notifications about students of the section
     if(filter === "section") return notification.type === "section" || notification.type === "student";
-    // "CR" and "Notes" match the notification type directly
     return notification.type === filter;
 }
 
-// group a newest-first list by day so it reads like a timeline, e.g. [{label:"Today" , items:[...]} , ...]
-// because the list is already sorted, notifications of the same day are next to each other
 const groupByDay = (notifications) =>{
     const result = [];
     for(const notification of notifications){
@@ -40,21 +34,18 @@ const groupByDay = (notifications) =>{
     return result;
 }
 
-// shared by all three portals (route /admin|cr|student/notifications)
 export const Notifications = () =>{
-    const [items , setItems] = useState([]); // all my notifications
-    const [filter , setFilter] = useState("all"); // the picked filter chip
+    const [items , setItems] = useState([]);
+    const [filter , setFilter] = useState("all");
     const {data , isLoading} = useGetnotificationsQuery();
     const [markread] = useMarknotificationsreadMutation();
 
-    // runs whenever new data arrives from the server and copies the notifications into state
     useEffect(() =>{
         if(data && data.success && data.data){
             setItems(data.data);
         }
     },[data]);
 
-    //$ function to mark all notifications as read
     const handleMarkAll = async () =>{
         try{
             const result = await markread({}).unwrap();
@@ -67,30 +58,25 @@ export const Notifications = () =>{
 
     if(isLoading) return <Loader/>;
 
-    // keep only the notifications that match the chosen filter chip, then group them by day
     const visible = items.filter((notification) => matchesFilter(notification , filter));
     const groups = groupByDay(visible);
 
     const unread = items.filter((notification) => !notification.read).length;
 
-    // which notification types I actually have ("student" counts as "section")
     const usedTypes = [];
     for(const notification of items){
         let type = notification.type;
         if(type === "student") type = "section";
         if(!usedTypes.includes(type)) usedTypes.push(type);
     }
-    // always show "All" and "Unread"; show the other chips only when I have that type of notification
     const filters = FILTERS.filter((option) => option.key === "all" || option.key === "unread" || usedTypes.includes(option.key));
 
-    // text under the page title
     let description = "You're all caught up.";
     if(unread){
         const word = unread === 1 ? "notification" : "notifications";
         description = `You have ${unread} unread ${word}.`;
     }
 
-    // the list area: an empty message or the notifications grouped by day
     let content;
     if(groups.length === 0){
         let emptyMessage = "No notifications here";
@@ -121,11 +107,9 @@ export const Notifications = () =>{
 
             <div className="flex flex-wrap gap-2 mb-4" role="tablist" aria-label="Filter notifications">
                 {filters.map((option) =>{
-                    // the picked chip is filled with the primary colour
                     let chipColors = "bg-white border-line text-ink/80 hover:border-primary/40";
                     if(filter === option.key) chipColors = "bg-primary text-white border-primary";
                     const chipClass = `px-3 py-1.5 rounded-full text-sm border ${chipColors}`;
-                    // the "Unread" chip also shows how many are unread, e.g. "Unread (3)"
                     let countText = "";
                     if(option.key === "unread" && unread > 0) countText = ` (${unread})`;
                     return (

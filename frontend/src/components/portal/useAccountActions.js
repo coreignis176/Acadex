@@ -5,18 +5,16 @@ import { Api, useLogoutMutation } from "../../store/Api/Api";
 import { setUser } from "../../store/slice/UserSlice";
 import { setPasswordPopup } from "../../store/slice/PortalSlice";
 
-// log out / change password - shared by the sidebar and the profile menu
 export const useAccountActions = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const [logout] = useLogoutMutation();
 
-    //$ function to handle logout
     const handleLogout = async () =>{
         try{
             const result = await logout().unwrap();
             dispatch(setUser(false));
-            dispatch(Api.util.resetApiState());      // forget every loaded list
+            dispatch(Api.util.resetApiState());
             toast.success(result.message || "Logged Out");
             Navigate("/");
         }
@@ -25,7 +23,6 @@ export const useAccountActions = () =>{
         }
     }
 
-    //$ function to open the change password form
     const handleChangePassword = () =>{
         dispatch(setPasswordPopup(true));
     }

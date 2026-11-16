@@ -1,9 +1,5 @@
-// static content for the Home page - written from a STUDENT's point of view
-
-// quick searches under the hero search box
 export const popularSearches = ["Linked list" , "Normalization" , "Operator overloading" , "Journal entries"];
 
-// how notes are found today (the "before" side of the problem section)
 export const scattered = [
     {text:"DS_unit3_final_FINAL(2).pdf" , where:"Forwarded many times" , tilt:"-rotate-3"},
     {text:"Anyone has OOPs notes??" , where:"Class group, 214 unread" , tilt:"rotate-2"},
@@ -12,7 +8,6 @@ export const scattered = [
     {text:"Check the channel, scroll up" , where:"Telegram, 3 weeks ago" , tilt:"-rotate-2"}
 ];
 
-// real student situations -> what Acadex does for them
 export const moments = [
     {key:"missed" , title:"Missed a lecture?" , text:"Open the subject and catch up from your classmates' notes for that topic." , color:{bg:"#e8f0fb" , fg:"#2b5d9e"}},
     {key:"exam" , title:"Exam tomorrow?" , text:"Every unit of every subject in one place. Download it all and revise offline." , color:{bg:"#fbe9ee" , fg:"#a8395a"}},
@@ -35,14 +30,12 @@ export const steps = [
     {title:"Share your own" , text:"Upload your notes. Once they're checked, your whole class can use them."}
 ];
 
-// example notes shown in the hero picture on the home page
 export const previewNotes = [
     {title:"Linked List - Complete Unit Notes" , subject:"Data Structures" , by:"Aman Verma" , likes:8},
     {title:"Inheritance and Virtual Functions" , subject:"Object Oriented Programming (C++)" , by:"Aman Verma" , likes:9},
     {title:"Normalization 1NF to BCNF" , subject:"Database Management Systems" , by:"Karan Mehta" , likes:5}
 ];
 
-// subjects shown in the scrolling ribbon on the home page
 export const allSubjects = [
     "Programming in C" , "Data Structures" , "Object Oriented Programming (C++)" , "Database Management Systems",
     "Discrete Mathematics" , "Computer Organization" , "Operating Systems" , "Computer Networks",

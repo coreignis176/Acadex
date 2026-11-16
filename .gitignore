@@ -1,24 +1,18 @@
-# Frontend Dependency directories
 node_modules/
 
-# Build output
 dist/
 build/
 *.log
 
-# Environment files
 .env
 .env.local
 
-# IDE files
 .vscode/
 .idea/
 
-# OS generated files
 .DS_Store
 Thumbs.db
 
-# compiled C / C++ programs (make them again with connect_pbl/compile.bat)
 connect_pbl/bin/
 *.exe
 *.o

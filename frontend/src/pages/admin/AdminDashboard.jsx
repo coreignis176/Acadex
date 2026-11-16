@@ -11,14 +11,12 @@ import { Loader } from "../../components/Loader";
 import { NoData } from "../../components/NoData";
 import { timeAgo } from "../../utils/format";
 
-// icon and colours for each kind of entry in "Recent activity"
 const ACTIVITY_ICONS = {
     section:{icon:<LuLayers className="w-4 h-4"/> , tone:"bg-primary-soft text-primary"},
     student:{icon:<LuUser className="w-4 h-4"/> , tone:"bg-canvas text-muted"},
     cr:{icon:<PiSealCheck className="w-4 h-4"/> , tone:"bg-seal-soft text-seal"}
 };
 
-// list of CR requests still waiting for the student to confirm
 const PendingList = ({pendingCrs}) =>{
     if(pendingCrs.length === 0){
         return <p className="px-5 py-6 text-sm text-muted">Nothing is waiting on you. Every CR request has been answered.</p>;
@@ -27,7 +25,6 @@ const PendingList = ({pendingCrs}) =>{
     return (
         <ul className="divide-y divide-line">
             {pendingCrs.map((student) =>{
-                // the student's section (it can be missing)
                 let sectionId;
                 let sectionLabel;
                 if(student.section){
@@ -49,10 +46,7 @@ const PendingList = ({pendingCrs}) =>{
     )
 }
 
-// table with one row per academic year: its sections and a bar for its students
 const YearTable = ({perYear}) =>{
-    // the biggest student count of any year (at least 1, so we never divide by 0)
-    // that year gets a full bar and the other bars are drawn relative to it
     let maxStudents = 1;
     for(const row of perYear){
         if(row.students > maxStudents){
@@ -71,7 +65,6 @@ const YearTable = ({perYear}) =>{
             </thead>
             <tbody>
                 {perYear.map((row) =>{
-                    // bar width = this year's students as a percentage of the biggest year
                     const barWidth = `${(row.students / maxStudents) * 100}%`;
 
                     return (
@@ -96,7 +89,6 @@ const YearTable = ({perYear}) =>{
     )
 }
 
-// list of the latest admin actions, newest first
 const ActivityList = ({recentActivity}) =>{
     if(recentActivity.length === 0){
         return <p className="px-5 py-6 text-sm text-muted">Administrative actions will appear here.</p>;
@@ -105,7 +97,6 @@ const ActivityList = ({recentActivity}) =>{
     return (
         <ol className="divide-y divide-line">
             {recentActivity.map((item) =>{
-                // unknown kinds fall back to the section icon
                 let meta = ACTIVITY_ICONS[item.kind];
                 if(!meta){
                     meta = ACTIVITY_ICONS.section;
@@ -128,7 +119,6 @@ const ActivityList = ({recentActivity}) =>{
     )
 }
 
-// list of the confirmed Class Representatives
 const CrList = ({crAssignments}) =>{
     if(crAssignments.length === 0){
         return <p className="px-5 py-6 text-sm text-muted">No Class Representatives are confirmed yet.</p>;
@@ -137,7 +127,6 @@ const CrList = ({crAssignments}) =>{
     return (
         <ul className="divide-y divide-line">
             {crAssignments.map((student) =>{
-                // the student's section name (it can be missing)
                 let sectionLabel;
                 if(student.section){
                     sectionLabel = student.section.label;
@@ -157,13 +146,11 @@ const CrList = ({crAssignments}) =>{
     )
 }
 
-// the admin home page: totals, pending CR requests, students per year and recent activity
 export const AdminDashboard = () =>{
     const Navigate = useNavigate();
-    const [stats , setStats] = useState(null);     // everything the dashboard shows, from the server
+    const [stats , setStats] = useState(null);
     const {data , isLoading , error} = useGetadminstatsQuery();
 
-    // runs every time new data arrives from the server and copies it into state
     useEffect(() =>{
         if(data && data.success && data.data){
             setStats(data.data);
@@ -171,11 +158,9 @@ export const AdminDashboard = () =>{
     },[data]);
 
     if(isLoading) return <Loader/>;
-    // Navigate(0) reloads the current page
     if(error) return <NoData message="The dashboard could not load" description={error?.data?.message} buttonText="Try again" onClick={() => Navigate(0)}/>;
     if(!stats) return <Loader/>;
 
-    // take the five lists / numbers out of the stats object
     const totals = stats.totals;
     const perYear = stats.perYear;
     const pendingCrs = stats.pendingCrs;

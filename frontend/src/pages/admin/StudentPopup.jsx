@@ -6,19 +6,15 @@ import { Modal } from "../../components/Modal";
 import { setStudentPopup } from "../../store/slice/PortalSlice";
 import { useAddstudentMutation } from "../../store/Api/Api";
 
-// popup to add ONE student to an existing section (bulk registration happens through the CSV in Add Section)
-// payload: {sectionId , label}
 export const StudentPopup = () =>{
     const dispatch = useDispatch();
-    const popup = useSelector((state) => state.portal.studentPopup);   // {sectionId , label}
+    const popup = useSelector((state) => state.portal.studentPopup);
     const [addstudent] = useAddstudentMutation();
-    const [saving , setSaving] = useState(false);      // true while the server adds the student
+    const [saving , setSaving] = useState(false);
     const {register , handleSubmit , formState:{errors}} = useForm();
 
-    //$ function to close the popup
     const close = () => dispatch(setStudentPopup(false));
 
-    //$ function to register a student in the section
     const handleOnSubmit = async (form) =>{
         try{
             setSaving(true);
@@ -43,7 +39,6 @@ export const StudentPopup = () =>{
             <form onSubmit={handleSubmit(handleOnSubmit)} className="flex flex-col gap-4" noValidate>
                 <div>
                     <label htmlFor="student-name" className="block text-sm font-medium mb-1.5">Student Name</label>
-                    {/* {...register(...)} connects this input to the form and gives it its rules */}
                     <input id="student-name" autoFocus className={field} placeholder="e.g. Priya Negi"
                         {...register("name" , {
                             required:"Enter the student's name",
@@ -57,7 +52,6 @@ export const StudentPopup = () =>{
                         <input id="student-class" className={`${field} uppercase`} placeholder="e.g. 13"
                             {...register("classRollNo" , {
                                 required:"Enter the class roll number",
-                                // 1 to 10 characters, each a letter, a digit or "-"
                                 pattern:{value:/^[A-Za-z0-9-]{1,10}$/ , message:"Up to 10 letters, digits or hyphens"}
                             })}/>
                         {errors.classRollNo && <p className="text-bad text-xs mt-1">{errors.classRollNo.message}</p>}
@@ -67,7 +61,6 @@ export const StudentPopup = () =>{
                         <input id="student-college" className={`${field} uppercase`} placeholder="e.g. BT25ML1013"
                             {...register("collegeRollNo" , {
                                 required:"Enter the college roll number",
-                                // 4 to 16 characters, each a letter, a digit or "-"
                                 pattern:{value:/^[A-Za-z0-9-]{4,16}$/ , message:"4-16 letters, digits or hyphens"}
                             })}/>
                         {errors.collegeRollNo && <p className="text-bad text-xs mt-1">{errors.collegeRollNo.message}</p>}

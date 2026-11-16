@@ -4,28 +4,23 @@ import { IoClose } from "react-icons/io5";
 import { openLoginPopup, toggleSlideMenu } from "../store/slice/UserSlice";
 import { homePortal, publicLinks } from "./portal/portalLinks";
 
-// mobile right-side drawer for the public pages
 export const Slidemenu = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
 
-    //$ function to close the drawer (its open / closed state is kept in Redux)
     const close = () => dispatch(toggleSlideMenu());
 
-    //$ function to close the drawer and open the user's portal
     const handleOpenPortal = () =>{
         close();
         Navigate(homePortal(user));
     }
 
-    //$ function to close the drawer and open the login popup
     const handleLogin = () =>{
         close();
         dispatch(openLoginPopup("student"));
     }
 
-    // logged in -> "Open my portal", otherwise "Log in"
     let bottomButton = <button onClick={handleLogin} className="w-full py-2.5 rounded-lg bg-primary text-white font-medium">Log in</button>;
     if(user){
         bottomButton = <button onClick={handleOpenPortal} className="w-full py-2.5 rounded-lg bg-primary text-white font-medium">Open my portal</button>;

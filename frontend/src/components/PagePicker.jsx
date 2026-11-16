@@ -3,19 +3,11 @@ import { LuArrowLeft, LuArrowRight, LuCamera, LuImagePlus, LuX } from "react-ico
 import { IMAGE_ACCEPT, MAX_PAGE_MB, MAX_PAGES, MAX_TOTAL_MB, pageProblem } from "../utils/notePages";
 import { fileSize } from "../utils/format";
 
-// pick page photos for a note: add (button / drop / camera), preview, reorder, remove
-// pages = File[] (controlled by the parent), onChange(File[]) gives the parent the new list
-// files that could not be added are listed in red under the picker
 export const PagePicker = ({pages , onChange , disabled , error}) =>{
-    const [rejected , setRejected] = useState([]);     // messages about files that were not added
+    const [rejected , setRejected] = useState([]);
 
-    // a temporary preview URL for every picked photo, so <img> can show it
-    // useMemo is needed here: it makes new URLs ONLY when the list of pages changes.
-    // Without it, new URLs would be made on every render and the effect below would free them again and again.
     const previews = useMemo(() => pages.map((file) => URL.createObjectURL(file)) , [pages]);
 
-    // runs whenever the previews change; the cleanup frees the OLD preview URLs from memory
-    // (the cleanup runs before the next previews are used, and when the picker closes)
     useEffect(() =>{
         return () =>{
             for(const url of previews){
@@ -24,14 +16,12 @@ export const PagePicker = ({pages , onChange , disabled , error}) =>{
         };
     },[previews]);
 
-    //$ function to add picked files (invalid ones are listed, not added)
     const add = (fileList) =>{
         const problems = [];
         const goodFiles = [];
-        // fileList is the list of files from the input or the drop (it can be empty)
         if(fileList){
             for(const file of fileList){
-                const problem = pageProblem(file);      // a message if the file is not allowed, otherwise empty
+                const problem = pageProblem(file);
                 if(problem){
                     problems.push(problem);
                 }
@@ -41,7 +31,6 @@ export const PagePicker = ({pages , onChange , disabled , error}) =>{
             }
         }
 
-        // how many more pages fit in this note
         const room = MAX_PAGES - pages.length;
         if(goodFiles.length > room){
             const leftOut = goodFiles.length - room;
@@ -51,57 +40,46 @@ export const PagePicker = ({pages , onChange , disabled , error}) =>{
         }
         setRejected(problems);
 
-        // add only as many good files as there is room for
         if(goodFiles.length && room > 0){
             const filesThatFit = goodFiles.slice(0 , room);
-            onChange(pages.concat(filesThatFit));      // a new list: the old pages followed by the new ones
+            onChange(pages.concat(filesThatFit));
         }
     }
 
-    //$ function to move a page one place earlier (direction = -1) or later (direction = 1)
     const move = (i , direction) =>{
-        const next = pages.slice();      // slice() with no numbers makes a copy, so the original list is not changed
+        const next = pages.slice();
         const otherIndex = i + direction;
         if(otherIndex < 0 || otherIndex >= next.length) return;
-        // swap the two pages
         const temp = next[i];
         next[i] = next[otherIndex];
         next[otherIndex] = temp;
         onChange(next);
     }
 
-    //$ function to remove one page
     const remove = (i) => onChange(pages.filter((page , pageIndex) => pageIndex !== i));
 
-    // total size of all pages in bytes
     let total = 0;
     for(const file of pages){
         total = total + file.size;
     }
 
-    // dragging files over the box: preventDefault() tells the browser we accept a drop here
     const handleDragOver = (event) => event.preventDefault();
 
-    //$ function to add files dropped on the box
     const handleDrop = (event) =>{
-        event.preventDefault();      // stop the browser from opening the dropped file
+        event.preventDefault();
         if(!disabled) add(event.dataTransfer.files);
     }
 
-    //$ function to add files chosen with a file input
     const handlePick = (event) =>{
         add(event.target.files);
-        event.target.value = "";     // empty the input so the same file can be picked again
+        event.target.value = "";
     }
 
     let pageWord = "pages";
     if(pages.length === 1) pageWord = "page";
 
-    // more photos can be added while not saving and while there is room
     const canAddMore = !disabled && pages.length < MAX_PAGES;
 
-    // ---- no pages yet: one big "Add page photos" box ----
-    // red when there is an error, faded while saving
     let colours = "border-primary/30 bg-primary-soft/40 hover:bg-primary-soft";
     if(error) colours = "border-bad/50 bg-bad-soft/30";
     let pointer = "cursor-pointer";
@@ -121,7 +99,6 @@ export const PagePicker = ({pages , onChange , disabled , error}) =>{
         );
     }
     else{
-        // ---- some pages: a grid of small previews with remove / move buttons ----
         picker = (
             <div onDragOver={handleDragOver} onDrop={handleDrop}
                 className="rounded-xl border border-line p-3">
@@ -166,7 +143,6 @@ export const PagePicker = ({pages , onChange , disabled , error}) =>{
         <div>
             {picker}
 
-            {/* phones: open the camera directly */}
             {canAddMore && (
                 <label className="sm:hidden mt-2 inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-line text-sm font-medium cursor-pointer">
                     <LuCamera className="w-4 h-4"/> Take a photo

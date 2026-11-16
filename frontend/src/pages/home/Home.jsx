@@ -5,7 +5,6 @@ import { Problem } from "./Problem";
 import { Features } from "./Features";
 import { CallToAction, Steps } from "./Steps";
 
-// Acadex for students: find, share and download notes for your class in one place
 const Home = () =>{
     return (
         <main>

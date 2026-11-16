@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { openLoginPopup } from "../store/slice/UserSlice";
 
-// the footer at the bottom of every public page (with the three login buttons)
 export const Footer = () =>{
     const dispatch = useDispatch();
     return (

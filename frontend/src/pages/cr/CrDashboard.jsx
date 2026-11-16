@@ -13,7 +13,6 @@ import { Loader } from "../../components/Loader";
 import { NoData } from "../../components/NoData";
 import { timeAgo } from "../../utils/format";
 
-// what happened to a note, in words
 const describe = (note) =>{
     if(note.status === "pending") return `${note.uploaderName} submitted it for approval`;
     if(note.status === "rejected"){
@@ -25,7 +24,6 @@ const describe = (note) =>{
     return `Submitted by ${note.uploaderName}`;
 };
 
-// list of the latest uploads and reviews in the section
 const RecentActivity = ({recent}) =>{
     if(recent.length === 0){
         return <NoData compact message="No activity yet" description="Uploads and submissions from your section will appear here."/>;
@@ -48,7 +46,6 @@ const RecentActivity = ({recent}) =>{
     )
 }
 
-// list of the section's CRs: me first, then the other CR (if there is one)
 const SectionCrs = ({myName , coCr}) =>{
     let crNote = "A section can have up to two CRs. The admin assigns the second one if your section has one.";
     if(coCr.length > 0) crNote = "Both CRs can upload, approve and remove notes for this section.";
@@ -62,7 +59,6 @@ const SectionCrs = ({myName , coCr}) =>{
                     <span className="text-sm text-muted">(you)</span>
                 </li>
                 {coCr.map((cr) =>{
-                    // a CR who has not confirmed yet gets a faded seal
                     let sealColor = "text-seal/40";
                     if(cr.crStatus === "active") sealColor = "text-seal";
                     const sealClass = `w-4 h-4 ${sealColor}`;
@@ -82,23 +78,19 @@ const SectionCrs = ({myName , coCr}) =>{
     )
 }
 
-// CR dashboard: the CR's section, quick stats, recent activity and the section's CRs
 export const CrDashboard = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
-    const [stats , setStats] = useState(null); // the section numbers from the server (null until loaded)
+    const [stats , setStats] = useState(null);
     const {data , isLoading , isError , refetch} = useGetcrstatsQuery();
 
-    // runs whenever new data arrives from the server and copies the stats into state
     useEffect(() =>{
         if(data && data.success && data.data){
             setStats(data.data);
         }
     },[data]);
 
-    // the server answered with an error and we have nothing to show -> say so (and offer a retry)
-    // instead of spinning forever
     if(isError && !stats){
         return <NoData message="This page could not be loaded" description="Check your connection and try again." buttonText="Try again" onClick={refetch}/>;
     }
@@ -108,7 +100,6 @@ export const CrDashboard = () =>{
     const totals = stats.totals;
     const recent = stats.recent;
 
-    // the other CR(s) of my section (everyone in the list except me)
     let allCrs = [];
     if(user && user.sectionCrs) allCrs = user.sectionCrs;
     const coCr = allCrs.filter((cr) => cr._id !== user._id);
@@ -119,7 +110,6 @@ export const CrDashboard = () =>{
     let pendingHint = "Nothing waiting";
     if(totals.pending) pendingHint = "Students are waiting for a review";
 
-    //$ function to open the upload notes popup
     const handleUpload = () =>{
         dispatch(toggleNotePopup());
     }
@@ -140,7 +130,6 @@ export const CrDashboard = () =>{
                 </>}
             />
 
-            {/* assignment */}
             <div className="bg-white border border-line rounded-xl p-5 mb-6 flex flex-col md:flex-row md:items-center gap-5">
                 <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-full bg-seal-soft text-seal flex items-center justify-center">

@@ -1,11 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300..700&family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap');
 @import "tailwindcss";
 
-/*
-  Acadex design tokens (Tailwind v4 @theme -> usable as bg-primary, text-ink ...)
-  navy   = primary actions + navigation
-  bronze = the "seal" colour, used ONLY for Class Representative status
-*/
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", Georgia, serif;
@@ -22,7 +17,6 @@
   --color-seal: #9a6b2f;
   --color-seal-soft: #f6eddf;
 
-  /* deep "ink well" navy for hero bands */
   --color-night: #142a43;
   --color-night-soft: #1e3a5a;
   --color-chalk: #c9d6e6;
@@ -61,11 +55,9 @@ button:disabled{
   border-radius: 6px;
 }
 
-/* thin scrollbars for chat + side panels */
 .thin-scroll::-webkit-scrollbar{ width: 6px; height: 6px; }
 .thin-scroll::-webkit-scrollbar-thumb{ background: var(--color-line); border-radius: 6px; }
 
-/* faint dot grid, like ruled notebook paper, for dark bands */
 .dot-grid{
   background-image: radial-gradient(rgba(201, 214, 230, 0.13) 1px, transparent 1px);
   background-size: 22px 22px;
@@ -76,7 +68,6 @@ button:disabled{
   background-size: 22px 22px;
 }
 
-/* the hero preview cards drift very slightly */
 .float-slow{ animation: floatY 7s ease-in-out infinite; }
 .float-slower{ animation: floatY 9s ease-in-out infinite reverse; }
 
@@ -85,7 +76,6 @@ button:disabled{
   50%{ transform: translateY(-8px); }
 }
 
-/* endless ribbon of subjects (content is rendered twice, so -50% loops seamlessly) */
 .marquee{ animation: marquee 48s linear infinite; }
 .marquee-reverse{ animation: marquee 56s linear infinite reverse; }
 .marquee-wrap:hover .marquee,

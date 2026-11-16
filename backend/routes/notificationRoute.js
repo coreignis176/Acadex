@@ -4,7 +4,6 @@ import { getnotifications, marknotificationsread } from "../controllers/notifica
 
 const router = express.Router();
 
-// mounted at /notification  -> any logged in user
 router.route("/getnotifications").get(validateUser , getnotifications);
 router.route("/markread").post(validateUser , marknotificationsread);
 

@@ -8,7 +8,6 @@ import { openLoginPopup, toggleSlideMenu } from "../store/slice/UserSlice";
 import { homePortal, publicLinks } from "./portal/portalLinks";
 import { initials } from "../utils/format";
 
-// the top bar of the public pages: logo, links, and the login / portal button
 const Navbar = () =>{
     const Navigate = useNavigate();
     const location = useLocation();
@@ -17,21 +16,16 @@ const Navbar = () =>{
     const LoginPopup = useSelector((state) => state.user.loginPopup);
     const slideMenu = useSelector((state) => state.user.slideMenu);
 
-    // a portal redirected here because nobody was logged in -> open the login modal
-    // runs whenever the address (or the data sent with it) changes
     useEffect(() =>{
         if(location.state && location.state.login){
             dispatch(openLoginPopup(location.state.login));
-            // remove the "login" note from the address so the popup does not open again on refresh
             Navigate(location.pathname , {replace:true , state:null});
         }
     },[location.state , location.pathname , dispatch , Navigate]);
 
-    // scroll to #features etc. after navigating to the home page
-    // runs whenever the "#..." part of the address changes
     useEffect(() =>{
         if(location.hash){
-            const id = location.hash.slice(1);      // "#features" -> "features"
+            const id = location.hash.slice(1);
             const section = document.getElementById(id);
             if(section){
                 section.scrollIntoView({behavior:"smooth"});
@@ -39,9 +33,6 @@ const Navbar = () =>{
         }
     },[location.hash]);
 
-    //$ function to pick the classes of a link (underlined when it is the page we are on)
-    // NavLink calls this and tells us isActive = true when the link matches the address
-    // links with a "#" never look active, and nothing looks active while a "#..." is in the address
     const linkClass = (item , isActive) =>{
         const isCurrentPage = isActive && !item.href.includes("#") && !location.hash;
         if(isCurrentPage){
@@ -50,13 +41,10 @@ const Navbar = () =>{
         return "py-1 border-b-2 border-transparent text-muted hover:text-ink";
     }
 
-    //$ function to open the login popup on the Student panel
     const handleLogin = () => dispatch(openLoginPopup("student"));
 
-    //$ function to open the portal of the logged-in user
     const handleOpenPortal = () => Navigate(homePortal(user));
 
-    // logged in -> "Open my portal" button with the user's initials, otherwise a "Log in" button
     let accountButton = (
         <button onClick={handleLogin} className="hidden sm:inline-flex px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-medium">
             Log in

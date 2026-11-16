@@ -8,9 +8,7 @@ import { SubjectIcon } from "../../components/SubjectIcon";
 import { shortSubject, subjectColor } from "../../utils/subjects";
 import { popularSearches, previewNotes } from "./homeData";
 
-// small coloured subject "stickers" around the preview
 const Sticker = ({subject , className}) =>{
-    // each subject has its own background (bg) and text (fg) colour
     const colors = subjectColor(subject);
     return (
         <span aria-hidden="true" className={`absolute z-[3] hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg ${className}`}
@@ -21,7 +19,6 @@ const Sticker = ({subject , className}) =>{
     )
 }
 
-// a realistic glimpse of a student's notes library
 const LibraryPreview = () =>{
     const chips = ["Data Structures" , "Object Oriented Programming (C++)" , "Database Management Systems"];
     return (
@@ -31,7 +28,6 @@ const LibraryPreview = () =>{
             <Sticker subject="Machine Learning" className="-right-6 bottom-28 rotate-3 float-slow"/>
             <Sticker subject="Financial Accounting" className="left-10 -bottom-2 rotate-2 float-slow"/>
 
-            {/* main card */}
             <div className="relative z-[1] bg-white rounded-2xl shadow-[0_30px_60px_-20px_rgba(5,15,30,0.55)] overflow-hidden">
                 <div className="px-5 pt-5 pb-4 border-b border-line">
                     <div className="flex items-center justify-between">
@@ -47,7 +43,6 @@ const LibraryPreview = () =>{
                     <div className="mt-3 flex gap-2 overflow-hidden">
                         {chips.map((chip , index) =>{
                             const colors = subjectColor(chip);
-                            // the first chip looks "selected": filled with the subject colour and white text
                             const chipStyle = index === 0 ? {background:colors.fg , color:"#fff"} : {background:colors.bg , color:colors.fg};
                             return (
                                 <span key={chip} className="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium"
@@ -77,7 +72,6 @@ const LibraryPreview = () =>{
                 </ul>
             </div>
 
-            {/* floating: a classmate shared something */}
             <div className="float-slow absolute z-[2] -top-3 right-0 sm:-right-4 w-[236px] bg-white rounded-xl shadow-xl p-3.5">
                 <div className="flex items-center gap-2.5">
                     <span className="w-8 h-8 rounded-full bg-[#efeafb] text-[#5b46a8] text-xs font-semibold flex items-center justify-center">PN</span>
@@ -92,7 +86,6 @@ const LibraryPreview = () =>{
                 </div>
             </div>
 
-            {/* floating: downloaded */}
             <div className="float-slower absolute z-[2] bottom-4 left-0 sm:-left-6 bg-white rounded-xl shadow-xl px-4 py-3 flex items-center gap-3">
                 <span className="w-9 h-9 rounded-lg bg-[#fbe9ee] text-[#a8395a] flex items-center justify-center"><LuDownload className="w-4 h-4"/></span>
                 <div>
@@ -104,25 +97,20 @@ const LibraryPreview = () =>{
     )
 }
 
-// the three short promises shown with tick marks under the search box
 const heroPoints = ["Sorted by subject" , "Quality-checked" , "Download anytime"];
 
-// the big dark hero at the top of the home page: headline, search box and the notes preview
 const Landing = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
-    const [query , setQuery] = useState(""); // the text typed in the search box
+    const [query , setQuery] = useState("");
 
-    //$ function to search notes (logged-in students go straight to their notes)
     const handleSearch = (text) =>{
-        // a "Try:" button passes its own text; the search form passes nothing, so we use what was typed
         let searchText = query;
         if(text !== undefined) searchText = text;
         const trimmedText = searchText.trim();
 
         if(user && user.role === "student"){
-            // put the search in the URL as ?q=... (encodeURIComponent makes spaces and symbols URL-safe)
             let url = "/student";
             if(trimmedText) url = `/student?q=${encodeURIComponent(trimmedText)}`;
             Navigate(url);
@@ -131,7 +119,6 @@ const Landing = () =>{
         else dispatch(openLoginPopup("student"));
     }
 
-    //$ function to handle the search form (preventDefault stops the browser from reloading the page)
     const handleSubmit = (event) =>{
         event.preventDefault();
         handleSearch();
@@ -140,7 +127,6 @@ const Landing = () =>{
     return (
         <section className="px-2 sm:px-4 pt-3">
             <div className="relative bg-night dot-grid rounded-[28px] overflow-hidden">
-                {/* soft light behind the preview */}
                 <div aria-hidden="true" className="absolute -right-40 -top-40 w-[620px] h-[620px] rounded-full bg-night-soft blur-3xl opacity-80"/>
                 <div aria-hidden="true" className="absolute -left-32 bottom-[-220px] w-[460px] h-[460px] rounded-full bg-[#2b5d9e]/25 blur-3xl"/>
 

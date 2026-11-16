@@ -1,17 +1,12 @@
-# Backend Dependency directories
 node_modules/
 
-# Logs
 *.log
 
-# Environment files
 .env
 .env.local
 
-# IDE files
 .vscode/
 .idea/
 
-# OS generated files
 .DS_Store
 Thumbs.db

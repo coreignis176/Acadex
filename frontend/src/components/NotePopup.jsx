@@ -8,22 +8,18 @@ import { toggleNotePopup } from "../store/slice/PortalSlice";
 import { useGetsubjectlistQuery, useSubmitnoteMutation } from "../store/Api/Api";
 import { makeNoteForm, pagesProblem } from "../utils/notePages";
 
-// upload popup used in the CR portal (students use the Upload Notes page)
-// the server decides the outcome: active CR -> published, student -> pending
 export const NotePopup = () =>{
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
     const {data} = useGetsubjectlistQuery();
     const [submitnote] = useSubmitnoteMutation();
-    const [saving , setSaving] = useState(false);          // true while the note is being uploaded
-    const [pages , setPages] = useState([]);               // the picked page photos (File objects)
-    const [pagesError , setPagesError] = useState("");     // message shown under the photos (empty = no problem)
+    const [saving , setSaving] = useState(false);
+    const [pages , setPages] = useState([]);
+    const [pagesError , setPagesError] = useState("");
     const {register , handleSubmit , formState:{errors}} = useForm();
 
-    //$ function to close the popup (its open / closed state lives in Redux so any portal page can open it)
     const close = () => dispatch(toggleNotePopup());
 
-    //$ function to upload the page images and share the note
     const handleOnSubmit = async (form) =>{
         const problem = pagesProblem(pages);
         if(problem){
@@ -46,7 +42,6 @@ export const NotePopup = () =>{
         }
     }
 
-    //$ function to check the title is 4-80 characters long (spaces at the ends are not counted)
     const checkTitle = (value) =>{
         const length = value.trim().length;
         if(length >= 4 && length <= 80){
@@ -55,7 +50,6 @@ export const NotePopup = () =>{
         return "Use 4-80 characters";
     }
 
-    //$ function to check the topic is 2-60 characters long
     const checkTopic = (value) =>{
         const length = value.trim().length;
         if(length >= 2 && length <= 60){
@@ -64,7 +58,6 @@ export const NotePopup = () =>{
         return "Use 2-60 characters";
     }
 
-    //$ function to keep the new list of pages and clear the old pages error
     const handlePagesChange = (nextPages) =>{
         setPages(nextPages);
         setPagesError("");
@@ -72,25 +65,21 @@ export const NotePopup = () =>{
 
     const field = "w-full px-3 py-2 rounded-lg border border-line bg-white text-sm focus:outline-none focus:border-primary";
 
-    // the subjects the user can choose from
     let list = [];
     if(data && data.data){
         list = data.data;
     }
 
-    // a confirmed Class Representative
     let isCr = false;
     if(user && user.crStatus === "active"){
         isCr = true;
     }
 
-    // name of the user's section, if they have one (used when there are no subjects)
     let sectionName;
     if(user && user.section){
         sectionName = user.section.name;
     }
 
-    // the popup's title and description depend on who is uploading
     let title = "Submit notes for approval";
     let description = "Your CR reviews notes before they are shared.";
     if(isCr){
@@ -98,7 +87,6 @@ export const NotePopup = () =>{
         description = "As a CR, your notes are shared right away with every section of your year.";
     }
 
-    // text of the submit button
     let submitText = "Submit for approval";
     if(saving){
         submitText = "Uploading...";
@@ -107,7 +95,6 @@ export const NotePopup = () =>{
         submitText = "Upload notes";
     }
 
-    // no subjects yet -> only a message, no form
     if(list.length === 0){
         return (
             <Modal onClose={close} width="max-w-2xl" title={title} description={description}>
@@ -126,7 +113,6 @@ export const NotePopup = () =>{
 
                 <div>
                     <label htmlFor="note-title" className="block text-sm font-medium mb-1">Title</label>
-                    {/* {...register(...)} connects this input to the form (its value and its rules) */}
                     <input id="note-title" className={field} placeholder="e.g. Stacks and Queues - Lecture 7"
                         {...register("title" , {required:"Enter a title" , validate:checkTitle})}/>
                     {errors.title && <p className="text-bad text-xs mt-1">{errors.title.message}</p>}

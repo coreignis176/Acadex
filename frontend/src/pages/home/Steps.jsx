@@ -5,14 +5,12 @@ import { openLoginPopup } from "../../store/slice/UserSlice";
 import { homePortal } from "../../components/portal/portalLinks";
 import { steps } from "./homeData";
 
-// icon and colours for each step (same order as the steps list)
 const STEP_STYLE = [
     {icon:<LuBookOpen className="w-6 h-6"/> , bg:"#e8f0fb" , fg:"#2b5d9e"},
     {icon:<LuDownload className="w-6 h-6"/> , bg:"#fbe9ee" , fg:"#a8395a"},
     {icon:<LuUpload className="w-6 h-6"/> , bg:"#e3f4f1" , fg:"#1f7a6c"}
 ];
 
-// three steps from finding notes to sharing them (a real sequence -> numbered)
 export const Steps = () =>{
     return (
         <section className="max-w-6xl mx-auto px-4 md:px-6 py-20 md:py-28">
@@ -20,7 +18,6 @@ export const Steps = () =>{
             <ol className="mt-12 grid gap-6 md:grid-cols-3">
                 {steps.map((step , index) =>{
                     const stepStyle = STEP_STYLE[index];
-                    // adding "26" to a hex colour like #2b5d9e makes it about 15% visible (a faint number)
                     const numberColor = `${stepStyle.fg}26`;
                     return (
                         <li key={step.title} className="relative bg-white border border-line rounded-2xl p-6 md:p-7">
@@ -40,13 +37,11 @@ export const Steps = () =>{
     )
 }
 
-// closing call to action - students only
 export const CallToAction = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
 
-    //$ function to open my notes if I am logged in, otherwise show the student login popup
     const handleClick = () =>{
         if(user) Navigate(homePortal(user));
         else dispatch(openLoginPopup("student"));

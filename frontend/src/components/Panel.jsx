@@ -1,4 +1,3 @@
-// white content block with an optional heading row
 export const Panel = ({title , action , children , className = "" , padded = true}) =>{
     const sectionClass = "bg-white border border-line rounded-xl " + className;
 

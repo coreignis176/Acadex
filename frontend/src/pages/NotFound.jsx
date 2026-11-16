@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { homePortal } from "../components/portal/portalLinks";
 
-// the "404" page shown when the URL does not match any route
 export const NotFound = () =>{
     const Navigate = useNavigate();
     const user = useSelector((state) => state.user.user);

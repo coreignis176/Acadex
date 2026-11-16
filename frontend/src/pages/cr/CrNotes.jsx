@@ -9,18 +9,16 @@ import { NotesBrowser } from "../../components/NotesBrowser";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { Loader } from "../../components/Loader";
 
-// CR notes page: every approved note of the section, with upload and delete
 export const CrNotes = () =>{
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
-    const [notes , setNotes] = useState([]); // the section's published (approved) notes
-    const [toDelete , setToDelete] = useState(null); // the note waiting for delete confirmation (null = popup closed)
-    const [deleting , setDeleting] = useState(false); // true while the delete is running
+    const [notes , setNotes] = useState([]);
+    const [toDelete , setToDelete] = useState(null);
+    const [deleting , setDeleting] = useState(false);
     const notesResult = useGetsectionnotesQuery();
     const subjectsResult = useGetsubjectsQuery();
     const [deletenote] = useDeletenoteMutation();
 
-    // runs whenever new notes arrive from the server and keeps only the approved (published) ones
     useEffect(() =>{
         const data = notesResult.data;
         if(data && data.success && data.data){
@@ -28,7 +26,6 @@ export const CrNotes = () =>{
         }
     },[notesResult.data]);
 
-    //$ function to delete notes from the section
     const handleDelete = async () =>{
         try{
             setDeleting(true);
@@ -44,7 +41,6 @@ export const CrNotes = () =>{
         }
     }
 
-    //$ function to open the upload notes popup
     const handleUpload = () =>{
         dispatch(toggleNotePopup());
     }
@@ -60,7 +56,6 @@ export const CrNotes = () =>{
     let subjects = [];
     if(subjectsResult.data && subjectsResult.data.data) subjects = subjectsResult.data.data;
 
-    // text for the delete popup; the uploader is mentioned only when someone else uploaded the note
     let deleteMessage = "";
     if(toDelete){
         deleteMessage = `"${toDelete.title}" will be removed for every student in ${section.name}.`;
@@ -68,7 +63,6 @@ export const CrNotes = () =>{
         deleteMessage += " This can't be undone.";
     }
 
-    // button shown by the notes list when there are no notes yet
     const emptyAction = {buttonText:"Upload notes" , onClick:handleUpload};
 
     return (

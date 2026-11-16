@@ -8,34 +8,25 @@ import { RoleBadge } from "../../components/StatusBadge";
 import { Loader } from "../../components/Loader";
 import { NoData } from "../../components/NoData";
 
-// the status filter buttons
 const STATUS = [
     {key:"all" , label:"All"},
     {key:"section" , label:"In a section"},
     {key:"removed" , label:"Removed"}
 ];
 
-// course id -> its position in the courses list, e.g. {btech:0 , bba:1}. Used for sorting
 const COURSE_ORDER = {};
 for(let i = 0; i < courses.length; i++){
     COURSE_ORDER[courses[i]._id] = i;
 }
 
-// "1st Year" , "2nd Year" , ... for the year dropdown
 const YEAR_NAMES = ["1st" , "2nd" , "3rd" , "4th" , "5th"];
 const ordinal = (yearNumber) => `${YEAR_NAMES[yearNumber - 1]} Year`;
 
-// compare function for .sort(): course -> year -> section -> class roll; students without a section go last
-// it returns a negative number when a comes first, a positive number when b comes first, 0 when equal
-// {numeric:true} sorts "2" before "10" (like numbers, not like text)
 const byPlacement = (a , b) =>{
-    // students without a section go to the end, sorted by name
     if(!a.section && !b.section) return a.name.localeCompare(b.name);
     if(!a.section) return 1;
     if(!b.section) return -1;
 
-    // a result of 0 means "the same", and 0 counts as false in an if,
-    // so each check only decides when there is a real difference; otherwise we try the next one
     const byCourse = COURSE_ORDER[a.section.courseId] - COURSE_ORDER[b.section.courseId];
     if(byCourse) return byCourse;
 
@@ -48,9 +39,7 @@ const byPlacement = (a , b) =>{
     return String(a.classRollNo).localeCompare(String(b.classRollNo) , undefined , {numeric:true});
 }
 
-// one row of the desktop table; students without a section show "-" in the section columns
 const StudentTableRow = ({student}) =>{
-    // confirmed CRs get a light "seal" background
     let rowClass = "";
     if(student.crStatus === "active"){
         rowClass = "bg-seal-soft/30";
@@ -85,12 +74,9 @@ const StudentTableRow = ({student}) =>{
     )
 }
 
-// one card of the mobile list (small screens show this instead of the table)
 const StudentCard = ({student}) =>{
-    // the four small facts under the name, or "Not in a section"
     let placement;
     if(student.section){
-        // "2nd Year" -> "2nd" (the column is narrow)
         const shortYear = student.section.yearLabel.replace(" Year" , "");
         placement = (
             <dl className="grid grid-cols-4 gap-2 mt-2.5 text-xs">
@@ -119,18 +105,15 @@ const StudentCard = ({student}) =>{
     )
 }
 
-// page listing every student on Acadex with a search box and course / year / status filters
 export const Students = () =>{
     const Navigate = useNavigate();
-    const [students , setStudents] = useState([]);    // every student, sorted by course / year / section / roll
-    const [search , setSearch] = useState("");        // text typed in the search box
-    const [course , setCourse] = useState("all");     // course filter: "all" or a course _id
-    const [year , setYear] = useState("all");         // year filter: "all" or "1" , "2" , ...
-    const [status , setStatus] = useState("all");     // status filter: "all" , "section" or "removed"
+    const [students , setStudents] = useState([]);
+    const [search , setSearch] = useState("");
+    const [course , setCourse] = useState("all");
+    const [year , setYear] = useState("all");
+    const [status , setStatus] = useState("all");
     const {data , isLoading} = useGetallstudentsQuery();
 
-    // runs every time new data arrives from the server and stores the students in sorted order.
-    // .slice() makes a copy first, because .sort() changes the array it is called on
     useEffect(() =>{
         if(data && data.success && data.data){
             setStudents(data.data.slice().sort(byPlacement));
@@ -141,17 +124,15 @@ export const Students = () =>{
     if(!students.length) return <NoData message="No students are registered yet" description="Add a section in Academic Structure and upload its student CSV."
         buttonText="Open Academic Structure" onClick={() => Navigate("/admin/structure")}/>;
 
-    // linear search over name + class roll + college roll, then the filters
     const query = search.trim().toLowerCase();
     const filtered = students.filter((student) =>{
-        // 1. search box (the class roll number has to match exactly)
         let classRoll = "";
         if(student.classRollNo !== null && student.classRollNo !== undefined){
             classRoll = String(student.classRollNo);
         }
         let searchMatch = false;
         if(!query){
-            searchMatch = true;     // empty search box matches everyone
+            searchMatch = true;
         }
         else if(student.name.toLowerCase().includes(query)){
             searchMatch = true;
@@ -163,7 +144,6 @@ export const Students = () =>{
             searchMatch = true;
         }
 
-        // 2. course and year dropdowns (a student without a section has no course or year)
         let sectionCourseId;
         let sectionYear;
         if(student.section){
@@ -173,7 +153,6 @@ export const Students = () =>{
         const courseMatch = course === "all" || sectionCourseId === course;
         const yearMatch = year === "all" || String(sectionYear) === year;
 
-        // 3. status buttons: All / In a section / Removed (= not in a section)
         let statusMatch;
         if(status === "all"){
             statusMatch = true;
@@ -188,7 +167,6 @@ export const Students = () =>{
         return searchMatch && courseMatch && yearMatch && statusMatch;
     });
 
-    //$ function to clear the search box and every filter
     const reset = () =>{
         setSearch("");
         setCourse("all");
@@ -196,7 +174,6 @@ export const Students = () =>{
         setStatus("all");
     }
 
-    //$ function to change the course filter (the year filter goes back to "All years")
     const handleCourseChange = (event) =>{
         setCourse(event.target.value);
         setYear("all");
@@ -204,8 +181,6 @@ export const Students = () =>{
 
     const selectedCourse = courses.find((item) => item._id === course);
 
-    // how many years the year dropdown offers:
-    // the chosen course's duration, or the longest course when "All courses" is picked
     let yearCount = 0;
     if(selectedCourse){
         yearCount = selectedCourse.duration;
@@ -218,7 +193,6 @@ export const Students = () =>{
         }
     }
 
-    // [1 , 2 , ... , yearCount]
     const yearOptions = [];
     for(let i = 1; i <= yearCount; i++){
         yearOptions.push(i);
@@ -226,13 +200,11 @@ export const Students = () =>{
 
     const selectClass = "px-3 py-2 rounded-lg border border-line bg-white text-sm focus:outline-none focus:border-primary";
 
-    // "student" or "students"
     let studentWord = "students";
     if(filtered.length === 1){
         studentWord = "student";
     }
 
-    // the table + mobile list, or a message when nothing matches the filters
     let listContent;
     if(filtered.length === 0){
         listContent = (
@@ -242,7 +214,6 @@ export const Students = () =>{
     else{
         listContent = (
             <>
-                {/* desktop table */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
@@ -261,7 +232,6 @@ export const Students = () =>{
                     </table>
                 </div>
 
-                {/* mobile list */}
                 <ul className="md:hidden divide-y divide-line">
                     {filtered.map((student) => <StudentCard key={student._id} student={student}/>)}
                 </ul>
@@ -294,7 +264,6 @@ export const Students = () =>{
                         </select>
                         <div className="inline-flex p-1 rounded-lg bg-canvas border border-line text-sm" role="tablist" aria-label="Status">
                             {STATUS.map((option) =>{
-                                // the chosen status looks raised (white with a shadow)
                                 let buttonClass = "px-3 py-1 rounded-md ";
                                 if(status === option.key){
                                     buttonClass = buttonClass + "bg-white shadow-sm font-medium";

@@ -1,5 +1,3 @@
-// a spinning loader with a "Loading..." text
-// full = whole screen (boot / PersistGate), otherwise fills the content area
 export const Loader = ({full = false , label = "Loading"}) =>{
     let boxClass = "w-full py-24 flex flex-col gap-3 items-center justify-center";
     if(full){

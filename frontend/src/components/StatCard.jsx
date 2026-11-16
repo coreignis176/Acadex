@@ -1,4 +1,3 @@
-// colours for each tone of the icon square
 const TONES = {
     primary:"bg-primary-soft text-primary",
     seal:"bg-seal-soft text-seal",
@@ -6,11 +5,9 @@ const TONES = {
     ok:"bg-ok-soft text-ok"
 };
 
-// one number + its label; `hint` explains what the number means
 export const StatCard = ({label , value , icon , hint , tone = "primary" , onClick}) =>{
     const iconClass = "w-10 h-10 shrink-0 rounded-lg flex items-center justify-center text-lg " + TONES[tone];
 
-    // the inside of the card is the same for the button and the box
     const content = (
         <>
             <div className={iconClass}>
@@ -24,7 +21,6 @@ export const StatCard = ({label , value , icon , hint , tone = "primary" , onCli
         </>
     );
 
-    // a button when it can be clicked
     if(onClick){
         return (
             <button onClick={onClick} className="w-full text-left bg-white border border-line rounded-xl p-4 flex items-start gap-3 hover:border-primary/40">
@@ -33,7 +29,6 @@ export const StatCard = ({label , value , icon , hint , tone = "primary" , onCli
         )
     }
 
-    // otherwise a plain box
     return (
         <div className="w-full text-left bg-white border border-line rounded-xl p-4 flex items-start gap-3 ">
             {content}

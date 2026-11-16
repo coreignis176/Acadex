@@ -1,7 +1,6 @@
 import { LuLayoutDashboard , LuNetwork , LuUsers , LuBell , LuBookOpen , LuClipboardCheck ,LuLibrary , LuUpload , LuHistory } from "react-icons/lu";
 import { PiSealCheck } from "react-icons/pi";
 
-// sidebar navigation of each portal (static data -> mapped by Sidebar.jsx)
 export const portalLinks = {
     admin:[
         {label:"Dashboard" , to:"/admin" , icon:LuLayoutDashboard , end:true},
@@ -26,7 +25,6 @@ export const portalLinks = {
 
 export const portalNames = {admin:"Admin Portal" , cr:"CR Portal" , student:"Student Portal"};
 
-//$ where a user lands after logging in
 export const homePortal = (user) =>{
     if(user && user.role === "admin"){
         return "/admin";
@@ -34,7 +32,6 @@ export const homePortal = (user) =>{
     return "/student";
 }
 
-// links of the public pages (Navbar + Slidemenu)
 export const publicLinks = [
     {label:"Home" , href:"/"},
     {label:"Features" , href:"/#features"},

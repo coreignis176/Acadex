@@ -8,15 +8,10 @@ import { formatDate } from "../utils/format";
 import { handleNoteDownload } from "../utils/noteActions";
 import { StatusBadge } from "./StatusBadge";
 
-// mode: "read"       -> student view (like / dislike / download)
-//       "manage"     -> CR view (status, counts, download, delete)
-//       "submission" -> the uploader's own view (status + rejection reason)
-// one note as a row in a list
 export const NoteRow = ({note , mode = "read" , onOpen , onDelete , showSubject = true}) =>{
     const [reactnote] = useReactnoteMutation();
-    const [reacting , setReacting] = useState(false);       // true while a like / dislike is being saved
+    const [reacting , setReacting] = useState(false);
 
-    //$ function to like / dislike a note
     const handleReact = async (type) =>{
         try{
             setReacting(true);
@@ -30,17 +25,14 @@ export const NoteRow = ({note , mode = "read" , onOpen , onDelete , showSubject 
         }
     }
 
-    //$ function to download the note
     const handleDownload = () => handleNoteDownload(note);
 
-    //$ function to open the note (only if the parent gave us an onOpen function)
     const handleOpen = () =>{
         if(onOpen) onOpen(note);
     }
 
-    // draws the like button (type = "like") or the dislike button (type = "dislike")
     const reactionButton = (type) =>{
-        const active = note.myReaction === type;      // did I already press this one?
+        const active = note.myReaction === type;
 
         let Icon = LuThumbsDown;
         let count = note.dislikeCount;
@@ -52,7 +44,6 @@ export const NoteRow = ({note , mode = "read" , onOpen , onDelete , showSubject 
             label = "Like";
             colours = "bg-primary-soft border-primary/30 text-primary";
         }
-        // a button that was not pressed stays grey
         if(!active){
             colours = "border-transparent text-muted hover:bg-canvas hover:text-ink";
         }

@@ -11,23 +11,17 @@ import { portalNames } from "./portalLinks";
 import { useAccountActions } from "./useAccountActions";
 import { initials } from "../../utils/format";
 
-// closes a dropdown when clicking outside it (same pattern as PetCare Navbar)
-// ref = the dropdown's box on the page, close = the function that hides it
 const useOutsideClose = (ref , close) =>{
-    // listens to every mouse click on the page while the top bar is shown
     useEffect(() =>{
         const handle = (event) =>{
-            // the click was somewhere outside the box -> close it
             if(ref.current && !ref.current.contains(event.target)) close();
         };
         document.addEventListener("mousedown" , handle);
 
-        // cleanup: stop listening (runs before the effect runs again, and when the top bar goes away)
         return () => document.removeEventListener("mousedown" , handle);
     },[ref , close]);
 }
 
-// small red number on the bell (shows "9+" for 10 or more, nothing for 0)
 const Badge = ({count , tone = "bg-bad"}) =>{
     if(count > 0){
         const badgeClass = "absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full " + tone + " text-white text-[10px] font-semibold flex items-center justify-center";
@@ -42,21 +36,17 @@ const Badge = ({count , tone = "bg-bad"}) =>{
     return null;
 }
 
-// the bar at the top of a portal: menu button, portal name, notifications bell and profile menu
 export const Topbar = ({portal}) =>{
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
-    const [bellOpen , setBellOpen] = useState(false);      // true = the notifications dropdown is open
-    const [menuOpen , setMenuOpen] = useState(false);      // true = the profile dropdown is open
-    // a ref points at a box on the page, so we can check if a click happened inside it
+    const [bellOpen , setBellOpen] = useState(false);
+    const [menuOpen , setMenuOpen] = useState(false);
     const bellRef = useRef(null);
     const menuRef = useRef(null);
-    // ask the server for new notifications every 15 seconds
     const {data} = useGetnotificationsQuery(undefined , {pollingInterval:15000});
     const [markread] = useMarknotificationsreadMutation();
     const {handleLogout , handleChangePassword} = useAccountActions();
 
-    // close each dropdown when the user clicks somewhere else
     useOutsideClose(bellRef , () => setBellOpen(false));
     useOutsideClose(menuRef , () => setMenuOpen(false));
 
@@ -66,14 +56,13 @@ export const Topbar = ({portal}) =>{
     }
     const unread = notifications.filter((item) => !item.read).length;
 
-    // details of the logged-in user (empty when nobody is logged in)
     let userName;
     let rollNo;
     let email;
     let section;
     let classRollNo;
     let isAdmin = false;
-    let isCr = false;          // a student who is a confirmed Class Representative
+    let isCr = false;
     if(user){
         userName = user.name;
         rollNo = user.rollNo;
@@ -84,11 +73,9 @@ export const Topbar = ({portal}) =>{
         isCr = user.role === "student" && user.crStatus === "active";
     }
 
-    // the second line of the profile menu: admins see their email, students their roll number
     let accountLine = `College roll ${rollNo}`;
     if(isAdmin) accountLine = email;
 
-    //$ function to mark everything as read
     const handleMarkAll = async () =>{
         try{
             const result = await markread({}).unwrap();
@@ -99,7 +86,6 @@ export const Topbar = ({portal}) =>{
         }
     }
 
-    //$ function to close the profile menu and open the change password form
     const handleChangePasswordClick = () =>{
         setMenuOpen(false);
         handleChangePassword();
@@ -107,7 +93,6 @@ export const Topbar = ({portal}) =>{
 
     const iconButton = "relative p-2 rounded-lg hover:bg-white text-ink/80";
 
-    // CRs can jump between the student portal and the CR portal
     let switchTo = "/cr";
     let switchText = "Switch to CR portal";
     if(portal === "cr"){
@@ -115,13 +100,11 @@ export const Topbar = ({portal}) =>{
         switchText = "Switch to student portal";
     }
 
-    // CRs have a bronze circle, everyone else a blue one
     let avatarClass = "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ring-offset-2 hover:ring-2 hover:ring-primary/30 bg-primary-soft text-primary";
     if(isCr){
         avatarClass = "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ring-offset-2 hover:ring-2 hover:ring-primary/30 bg-seal-soft text-seal";
     }
 
-    // the newest 6 notifications, or a message when there are none
     let bellList = <p className="px-4 py-8 text-center text-sm text-muted">You have no notifications yet.</p>;
     if(notifications.length > 0){
         bellList = <NotificationList items={notifications.slice(0 , 6)} compact/>;
@@ -136,7 +119,6 @@ export const Topbar = ({portal}) =>{
 
             <div className="ml-auto flex items-center gap-1.5">
 
-                {/* notifications */}
                 <div className="relative" ref={bellRef}>
                     <button onClick={() => setBellOpen(!bellOpen)} aria-label={`Notifications, ${unread} unread`} aria-expanded={bellOpen} className={iconButton}>
                         <LuBell className="w-5 h-5"/>
@@ -159,7 +141,6 @@ export const Topbar = ({portal}) =>{
                     )}
                 </div>
 
-                {/* profile menu */}
                 <div className="relative ml-1" ref={menuRef}>
                     <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Profile menu" aria-expanded={menuOpen}
                         className={avatarClass}>

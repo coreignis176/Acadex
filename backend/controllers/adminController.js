@@ -9,30 +9,15 @@ import {
     courses, findCourse, yearLabel, sectionInfo, publicUser, cleanName, cleanCode,
     subjectFieldProblem, byClassRoll, notify, notifyMany, logActivity, MAX_CR_PER_SECTION
 } from "../utils/helpers.js";
-import { checkStudent, checkStudentList, checkSubject } from "../connect_pbl/validation.js";   // form checks done by our C++ program
-
-// every route in this file is admin only (see routes/adminRoute.js)
-
-// NOTE on the MongoDB words used in the queries below:
-//   $ne = "not equal to"     e.g. {sectionId:{$ne:null}} -> sectionId is not null (the student has a section)
-//   $in = "one of these"     e.g. {crStatus:{$in:["active" , "pending"]}} -> crStatus is "active" OR "pending"
-//
-// NOTE on some JavaScript short forms used in this file:
-//   {courseId , year}      is short for {courseId:courseId , year:year}
-//   `Hello ${name}`        is a "template string": ${name} puts the value of name inside the text
-//   String(section._id)    turns a MongoDB id into plain text, so it can be compared or used as an object key
+import { checkStudent, checkStudentList, checkSubject } from "../connect_pbl/validation.js";
 
 const MAX_CSV_STUDENTS = 500;
 const MAX_SUBJECTS = 20;
 
-
-//$ function to get the password given to every new student (they log in with college roll number + this)
 const defaultPassword = () =>{
     return process.env.DEFAULT_STUDENT_PASSWORD || "Acadex@123";
 }
 
-
-//$ function to make an object {sectionId : section} so we can find a section quickly
 const sectionMap = async() =>{
     const sections = await Section.find();
     const map = {};
@@ -42,14 +27,11 @@ const sectionMap = async() =>{
     return map;
 }
 
-
-//$ function to count students: {sectionId : number of students}
 const studentCounts = async() =>{
     const students = await User.find({role:"student" , sectionId:{$ne:null}});
     const counts = {};
     for(const student of students){
         const key = String(student.sectionId);
-        // first time we see this section -> start from 0
         if(!counts[key]){
             counts[key] = 0;
         }
@@ -58,10 +40,6 @@ const studentCounts = async() =>{
     return counts;
 }
 
-
-// ============================ dashboard =====================================
-
-//$ function to get the admin dashboard overview
 export const getadminstats = async(req , res) =>{
     try{
         const activeSections = await Section.find({archived:false});
@@ -73,28 +51,24 @@ export const getadminstats = async(req , res) =>{
         const crs = students.filter((student) => student.crStatus === "active");
         const pending = students.filter((student) => student.crStatus === "pending");
 
-        // one row per course year, e.g. "B.Tech 2nd Year : 3 sections , 60 students"
         const perYear = [];
         for(const course of courses){
             for(let year = 1; year <= course.duration; year++){
                 const yearSections = activeSections.filter((section) => section.courseId === course._id && section.year === year);
 
-                // add up the students of every section in this year
                 let total = 0;
                 for(const section of yearSections){
                     total += counts[String(section._id)] || 0;
                 }
 
-                const label = course.name + " " + yearLabel(year);      // e.g. "B.Tech 2nd Year"
+                const label = course.name + " " + yearLabel(year);
                 perYear.push({courseId:course._id , label , year , sections:yearSections.length , students:total});
             }
         }
 
-        // the CR lists, with each student's section details added
         const pendingCrs = pending.map((student) => publicUser(student , sections[String(student.sectionId)]));
         const crAssignments = crs.map((student) => publicUser(student , sections[String(student.sectionId)]));
 
-        // newest activity first (createdAt:-1 means "biggest date first"), only the latest 8
         const recentActivity = await Activity.find().sort({createdAt:-1}).limit(8);
 
         res.status(200).send({success:true , data:{
@@ -118,8 +92,6 @@ export const getadminstats = async(req , res) =>{
     }
 }
 
-
-//$ function to get the full course -> year -> section tree
 export const getstructure = async(req , res) =>{
     try{
         const allSections = await Section.find();
@@ -137,7 +109,6 @@ export const getstructure = async(req , res) =>{
                     const activeCrs = inSection.filter((student) => student.crStatus === "active");
                     const pendingCrs = inSection.filter((student) => student.crStatus === "pending");
 
-                    // start with the normal section details, then add the extra numbers
                     const row = sectionInfo(section);
                     row.createdAt = section.createdAt;
                     row.students = inSection.length;
@@ -160,23 +131,16 @@ export const getstructure = async(req , res) =>{
     }
 }
 
-
-// ============================ sections ======================================
-
-//$ function to create a section AND register its students from the uploaded CSV
-// students = [{row , name , classRollNo , collegeRollNo}]  (row = line number in the CSV)
-// all-or-nothing: if any row is wrong nothing is saved and every problem is sent back
 export const addsection = async(req , res) =>{
     try{
         const {courseId , name , students} = req.body;
-        const year = Number(req.body.year);      // the year may arrive as text ("2") -> make it a number
+        const year = Number(req.body.year);
         const course = findCourse(courseId);
-        const clean = String(name || "").trim();       // String(...) -> a number or list sent by mistake can't crash .trim()
+        const clean = String(name || "").trim();
 
         if(!course){
             return res.status(400).send({success:false , message:"This Course Does Not Exist."});
         }
-        // Number.isInteger -> "abc" (NaN) or 2.5 are not a year
         if(!Number.isInteger(year) || year < 1 || year > course.duration){
             return res.status(400).send({success:false , message:`${course.name} Has Only ${course.duration} Years.`});
         }
@@ -187,9 +151,8 @@ export const addsection = async(req , res) =>{
             return res.status(400).send({success:false , message:"Section Names Can Be At Most 20 Characters."});
         }
 
-        const courseYear = course.name + " " + yearLabel(year);      // e.g. "B.Tech 2nd Year"
+        const courseYear = course.name + " " + yearLabel(year);
 
-        // same name in the same course + year? (compared without caring about capital letters)
         const sameYear = await Section.find({courseId , year});
         const duplicate = sameYear.find((section) => section.name.toLowerCase() === clean.toLowerCase());
         if(duplicate){
@@ -197,7 +160,6 @@ export const addsection = async(req , res) =>{
             return res.status(400).send({success:false , message});
         }
 
-        // Array.isArray checks that students really is a list
         if(!Array.isArray(students) || students.length === 0){
             return res.status(400).send({success:false , message:"Please Upload A CSV File With At Least One Student."});
         }
@@ -205,17 +167,15 @@ export const addsection = async(req , res) =>{
             return res.status(400).send({success:false , message:`A Section Can Be Created With At Most ${MAX_CSV_STUDENTS} Students At Once.`});
         }
 
-        // 1. check every row before saving anything
         const errors = [];
-        const seenClass = {};       // class roll  -> row where we saw it
-        const seenCollege = {};     // college roll -> row where we saw it
+        const seenClass = {};
+        const seenCollege = {};
         const rows = [];
 
         const sections = await sectionMap();
 
         for(let i = 0; i < students.length; i++){
-            const csvStudent = students[i] || {};       // an empty row (null) -> an empty object , so it can't crash
-            // row number from the CSV, or guess it (+2 because row 1 is the header line)
+            const csvStudent = students[i] || {};
             const row = csvStudent.row || i + 2;
             rows.push({
                 row,
@@ -226,8 +186,6 @@ export const addsection = async(req , res) =>{
             });
         }
 
-        // our C++ program checks the name + roll numbers of ALL rows in one run
-        // fieldErrors[i] = the problem of row i , or null
         const fieldErrors = await checkStudentList(rows);
 
         for(let i = 0; i < rows.length; i++){
@@ -237,7 +195,7 @@ export const addsection = async(req , res) =>{
             const fieldError = fieldErrors[i];
             if(fieldError){
                 errors.push({row , message:fieldError});
-                continue;       // skip the other checks for this row
+                continue;
             }
 
             if(seenClass[record.classRollNo]){
@@ -258,10 +216,8 @@ export const addsection = async(req , res) =>{
                 seenCollege[record.collegeRollNo] = row;
             }
 
-            // is this college roll number already used?
             const existing = await User.findOne({rollNo:record.collegeRollNo});
             if(existing && (existing.role !== "student" || existing.sectionId)){
-                // build the message step by step
                 let message = "College roll number " + record.collegeRollNo + " is already registered to " + existing.name;
                 const where = sectionInfo(sections[String(existing.sectionId)]);
                 if(where){
@@ -269,7 +225,6 @@ export const addsection = async(req , res) =>{
                 }
                 errors.push({row , message});
             }
-            // a student removed earlier (no section) can be registered again
             if(existing && !existing.sectionId){
                 record.existing = existing;
             }
@@ -280,18 +235,14 @@ export const addsection = async(req , res) =>{
             if(errors.length === 1){
                 text = "Row Needs";
             }
-            // 422 = the data was understood but some rows are not acceptable
             const message = `${errors.length} ${text} Fixing. Nothing Was Saved.`;
             return res.status(422).send({success:false , message , data:{errors}});
         }
 
-        // 2. everything is fine -> create the section and the students
         const section = await Section.create({courseId , year , name:clean});
         const info = sectionInfo(section);
-        // bcrypt.hash turns the password into a scrambled "hash" (10 = how hard it works); we never store the real password
         const password = await bcrypt.hash(defaultPassword() , 10);
 
-        // the same notification text for every new student of this section
         const registeredTitle = `Registered in ${clean}`;
         const registeredText = `You have been registered in ${info.course} ${info.yearLabel}, section ${clean}.`;
 
@@ -336,8 +287,6 @@ export const addsection = async(req , res) =>{
     }
 }
 
-
-//$ function to rename a section
 export const renamesection = async(req , res) =>{
     try{
         const {sectionId , name} = req.body;
@@ -354,7 +303,6 @@ export const renamesection = async(req , res) =>{
             return res.status(400).send({success:false , message:"Section Names Can Be At Most 20 Characters."});
         }
 
-        // the other sections of the same year ($ne = "not equal" -> leave this section out)
         const sameYear = await Section.find({courseId:section.courseId , year:section.year , _id:{$ne:section._id}});
         const duplicate = sameYear.find((other) => other.name.toLowerCase() === clean.toLowerCase());
         if(duplicate){
@@ -378,8 +326,6 @@ export const renamesection = async(req , res) =>{
     }
 }
 
-
-//$ function to archive / restore a section
 export const archivesection = async(req , res) =>{
     try{
         const {sectionId , archived} = req.body;
@@ -394,7 +340,7 @@ export const archivesection = async(req , res) =>{
             return res.status(400).send({success:false , message:`Remove The ${count} Students In ${section.name} Before Archiving It.`});
         }
 
-        section.archived = Boolean(archived);       // Boolean(...) turns any value into true / false
+        section.archived = Boolean(archived);
         await section.save();
 
         let doneWord = "Restored";
@@ -414,13 +360,10 @@ export const archivesection = async(req , res) =>{
     }
 }
 
-
-//$ function to get one section with its students, subjects and CR slots
 export const getsection = async(req , res) =>{
     try{
         const {id} = req.params;
 
-        // the id comes from the URL, so it can be anything -> check it looks like a real MongoDB id first
         if(!mongoose.isValidObjectId(id)){
             return res.status(404).send({success:false , message:"This Section Does Not Exist."});
         }
@@ -432,15 +375,12 @@ export const getsection = async(req , res) =>{
 
         const studentDocs = await User.find({role:"student" , sectionId:section._id});
 
-        // students without passwords, sorted by class roll number
         const students = studentDocs.map((student) => publicUser(student , section));
         students.sort(byClassRoll);
 
-        // a CR slot is "used" by an active CR or by a CR request still waiting for an answer
         const crStudents = studentDocs.filter((student) => student.crStatus === "active" || student.crStatus === "pending");
         const crSlotsUsed = crStudents.length;
 
-        // other sections of the same course + year (the admin can copy their subjects)
         const others = await Section.find({courseId:section.courseId , year:section.year , archived:false , _id:{$ne:section._id}});
         const siblings = others.map((other) =>{
             return {_id:other._id , name:other.name , subjectCount:other.subjects.length};
@@ -461,10 +401,6 @@ export const getsection = async(req , res) =>{
     }
 }
 
-
-// ============================ students ======================================
-
-//$ function to register one more student in an existing section
 export const addstudent = async(req , res) =>{
     try{
         const {sectionId} = req.body;
@@ -477,7 +413,7 @@ export const addstudent = async(req , res) =>{
             return res.status(400).send({success:false , message:"Students Can Only Be Added To An Active Section."});
         }
 
-        const fieldError = await checkStudent(name , classRollNo , collegeRollNo);      // checked by our C++ program
+        const fieldError = await checkStudent(name , classRollNo , collegeRollNo);
         if(fieldError){
             return res.status(400).send({success:false , message:fieldError + "."});
         }
@@ -495,7 +431,6 @@ export const addstudent = async(req , res) =>{
 
         let student = existing;
         if(existing){
-            // a student removed earlier is registered again (the account was never deleted)
             existing.name = name;
             existing.classRollNo = classRollNo;
             existing.sectionId = section._id;
@@ -503,7 +438,6 @@ export const addstudent = async(req , res) =>{
             await existing.save();
         }
         else{
-            // bcrypt.hash scrambles the default password so the real one is never stored
             const password = await bcrypt.hash(defaultPassword() , 10);
             student = await User.create({role:"student" , name , rollNo:collegeRollNo , classRollNo , password , sectionId:section._id , mustChangePassword:true});
         }
@@ -521,8 +455,6 @@ export const addstudent = async(req , res) =>{
     }
 }
 
-
-//$ function to edit a student's name, class roll number and college roll number
 export const updatestudent = async(req , res) =>{
     try{
         const {studentId} = req.body;
@@ -535,14 +467,13 @@ export const updatestudent = async(req , res) =>{
             return res.status(400).send({success:false , message:"This Student Is Not In Any Section."});
         }
 
-        const fieldError = await checkStudent(name , classRollNo , collegeRollNo);      // checked by our C++ program
+        const fieldError = await checkStudent(name , classRollNo , collegeRollNo);
         if(fieldError){
             return res.status(400).send({success:false , message:fieldError + "."});
         }
 
         const section = await Section.findById(student.sectionId);
 
-        // someone ELSE in the section with this class roll number? ($ne = "not equal" -> not this student)
         const sameClassRoll = await User.findOne({role:"student" , sectionId:section._id , classRollNo , _id:{$ne:student._id}});
         if(sameClassRoll){
             const message = `Class Roll Number ${classRollNo} Already Belongs To ${sameClassRoll.name} In ${section.name}.`;
@@ -564,7 +495,6 @@ export const updatestudent = async(req , res) =>{
         student.rollNo = collegeRollNo;
         await student.save();
 
-        // keep the name shown on their notes the same
         await Note.updateMany({uploadedBy:student._id} , {uploaderName:name});
         const sectionLabel = sectionInfo(section).label;
         await logActivity("student" , `Updated details of ${name} (${sectionLabel})`);
@@ -577,8 +507,6 @@ export const updatestudent = async(req , res) =>{
     }
 }
 
-
-//$ function to remove a student from their section (the account stays)
 export const removestudent = async(req , res) =>{
     try{
         const {studentId} = req.body;
@@ -596,11 +524,8 @@ export const removestudent = async(req , res) =>{
         student.sectionId = null;
         await student.save();
 
-        // a CR request they did not answer yet is gone -> hide its Confirm / Not me buttons
-        // (the same as removecr does)
         await Notification.updateMany({userId:student._id , "action.kind":"cr-confirm"} , {action:null});
 
-        // the student's message, built step by step (one extra sentence if they were a CR)
         let removedText = "You have been removed from " + info.label + ".";
         if(wasCr){
             removedText = removedText + " Your CR permissions have been revoked.";
@@ -616,7 +541,6 @@ export const removestudent = async(req , res) =>{
         }
         await notify(req.userId , "student" , "Student removed" , `${student.name} was removed from ${info.label}.`);
 
-        // the activity log line, also built step by step
         let logText = "Removed " + student.name + " from " + info.label;
         if(wasCr){
             logText = logText + " (CR revoked)";
@@ -631,9 +555,6 @@ export const removestudent = async(req , res) =>{
     }
 }
 
-
-//$ function to reset a student's forgotten password back to the default one
-// the student must choose a new password at their next login
 export const resetpassword = async(req , res) =>{
     try{
         const {studentId} = req.body;
@@ -643,7 +564,6 @@ export const resetpassword = async(req , res) =>{
             return res.status(400).send({success:false , message:"This Student Does Not Exist."});
         }
 
-        // store the scrambled (hashed) default password, never the real text
         student.password = await bcrypt.hash(defaultPassword() , 10);
         student.mustChangePassword = true;
         await student.save();
@@ -657,11 +577,8 @@ export const resetpassword = async(req , res) =>{
     }
 }
 
-
-//$ function to list every registered student (admin search page)
 export const getallstudents = async(req , res) =>{
     try{
-        // sort({name:1}) -> A to Z by name
         const students = await User.find({role:"student"}).sort({name:1});
         const sections = await sectionMap();
         const list = students.map((student) => publicUser(student , sections[String(student.sectionId)]));
@@ -673,10 +590,6 @@ export const getallstudents = async(req , res) =>{
     }
 }
 
-
-// ============================ CRs ===========================================
-
-//$ function to send a CR appointment to a student (max 2 per section)
 export const selectcr = async(req , res) =>{
     try{
         const {studentId} = req.body;
@@ -693,7 +606,6 @@ export const selectcr = async(req , res) =>{
             return res.status(400).send({success:false , message:`${student.name} Is Already ${already}.`});
         }
 
-        // how many CR slots of this section are taken ($in = crStatus is "active" OR "pending")
         const used = await User.countDocuments({sectionId:student.sectionId , crStatus:{$in:["active" , "pending"]}});
         if(used >= MAX_CR_PER_SECTION){
             return res.status(400).send({success:false , message:`This Section Already Has ${MAX_CR_PER_SECTION} CR Positions Filled Or Pending.`});
@@ -705,7 +617,6 @@ export const selectcr = async(req , res) =>{
         student.crStatus = "pending";
         await student.save();
 
-        // the last argument {kind:"cr-confirm"} makes the frontend show Confirm / Not me buttons
         const confirmText = `The admin has identified you as the Class Representative of ${info.name}. Please confirm your appointment.`;
         await notify(student._id , "cr" , "Confirm your CR appointment" , confirmText , {kind:"cr-confirm"});
         await logActivity("cr" , `Selected ${student.name} as CR of ${info.label}`);
@@ -718,8 +629,6 @@ export const selectcr = async(req , res) =>{
     }
 }
 
-
-//$ function to remove a CR (or cancel a CR request that is still pending)
 export const removecr = async(req , res) =>{
     try{
         const {studentId} = req.body;
@@ -736,8 +645,6 @@ export const removecr = async(req , res) =>{
         student.crStatus = "none";
         await student.save();
 
-        // a cancelled request should no longer show Confirm / Not me
-        // ("action.kind" looks inside the action object of each notification)
         await Notification.updateMany({userId:student._id , "action.kind":"cr-confirm"} , {action:null});
 
         let message = "CR Request Withdrawn";
@@ -746,7 +653,6 @@ export const removecr = async(req , res) =>{
 
             const removedText = `You are no longer a Class Representative of ${info.name}. Your CR portal access has ended; your student account is unchanged.`;
             await notify(student._id , "cr" , "Removed as CR" , removedText);
-            // everyone in the section except this student
             const classmates = await User.find({role:"student" , sectionId:section._id , _id:{$ne:student._id}});
             const classmateIds = classmates.map((classmate) => classmate._id);
             const crRemovedText = `${student.name} is no longer a Class Representative of ${info.name}.`;
@@ -768,24 +674,15 @@ export const removecr = async(req , res) =>{
     }
 }
 
-
-// ============================ subjects ======================================
-
-//$ function to check if a subject clashes with one the section already has, returns the problem or null
-// ignoreId = the subject being edited (so it does not clash with itself)
 const subjectClash = (section , name , code , ignoreId) =>{
     for(const subject of section.subjects){
-        if(ignoreId && String(subject._id) === String(ignoreId)) continue;     // skip the subject being edited
+        if(ignoreId && String(subject._id) === String(ignoreId)) continue;
         if(subject.name.toLowerCase() === name.toLowerCase()) return `${section.name} Already Has The Subject ${subject.name}.`;
         if(subject.code === code) return `Code ${code} Is Already Used By ${subject.name} In ${section.name}.`;
     }
     return null;
 }
 
-
-//$ function to check a subject, returns the first problem or null
-// 1. name + code -> checked by our C++ program (connect_pbl/cpp/validation.cpp)
-// 2. already in the section? -> checked here (the message needs the saved subject names)
 const subjectProblem = async(section , name , code , ignoreId) =>{
     const fieldProblem = await checkSubject(name , code);
     if(fieldProblem){
@@ -794,13 +691,10 @@ const subjectProblem = async(section , name , code , ignoreId) =>{
     return subjectClash(section , name , code , ignoreId);
 }
 
-
-//$ function to add a subject (name + code) to a section
 export const addsubject = async(req , res) =>{
     try{
         const {sectionId} = req.body;
         const name = cleanName(req.body.name);
-        // /\s+/g matches every space (or tab / new line), so "TCS 355" becomes "TCS355"
         const code = cleanCode(req.body.code).replace(/\s+/g , "");
 
         const section = await Section.findById(sectionId);
@@ -817,7 +711,6 @@ export const addsubject = async(req , res) =>{
 
         section.subjects.push({name , code});
         await section.save();
-        // the subject we just added is the last one in the list (now with its own _id)
         const subject = section.subjects[section.subjects.length - 1];
 
         const sectionLabel = sectionInfo(section).label;
@@ -831,20 +724,16 @@ export const addsubject = async(req , res) =>{
     }
 }
 
-
-//$ function to edit a subject (the notes of this section move to the new name / code)
 export const updatesubject = async(req , res) =>{
     try{
         const {sectionId , subjectId} = req.body;
         const name = cleanName(req.body.name);
-        // /\s+/g matches every space (or tab / new line), so "TCS 355" becomes "TCS355"
         const code = cleanCode(req.body.code).replace(/\s+/g , "");
 
         const section = await Section.findById(sectionId);
         if(!section){
             return res.status(404).send({success:false , message:"This Section Does Not Exist."});
         }
-        // .id(...) is a mongoose helper: finds the subject with this _id inside the list (or null)
         const subject = section.subjects.id(subjectId);
         if(!subject){
             return res.status(400).send({success:false , message:"This Subject Was Already Removed."});
@@ -857,7 +746,6 @@ export const updatesubject = async(req , res) =>{
             return res.status(200).send({success:true , message:"Nothing To Update" , data:subject});
         }
 
-        // notes saved under the old name follow the change
         await Note.updateMany({sectionId:section._id , subject:subject.name} , {subject:name , subjectCode:code});
 
         subject.name = name;
@@ -874,8 +762,6 @@ export const updatesubject = async(req , res) =>{
     }
 }
 
-
-//$ function to remove a subject (notes already shared for it stay available)
 export const removesubject = async(req , res) =>{
     try{
         const {sectionId , subjectId} = req.body;
@@ -884,14 +770,12 @@ export const removesubject = async(req , res) =>{
         if(!section){
             return res.status(404).send({success:false , message:"This Section Does Not Exist."});
         }
-        // .id(...) is a mongoose helper: finds the subject with this _id inside the list (or null)
         const subject = section.subjects.id(subjectId);
         if(!subject){
             return res.status(400).send({success:false , message:"This Subject Was Already Removed."});
         }
 
         const label = subject.code + " " + subject.name;
-        // .pull(...) is a mongoose helper: removes the subject with this _id from the list
         section.subjects.pull(subjectId);
         await section.save();
 
@@ -905,8 +789,6 @@ export const removesubject = async(req , res) =>{
     }
 }
 
-
-//$ function to copy subjects from another section of the same course + year (skips ones already there)
 export const copysubjects = async(req , res) =>{
     try{
         const {sectionId , fromSectionId} = req.body;
@@ -920,9 +802,6 @@ export const copysubjects = async(req , res) =>{
             return res.status(400).send({success:false , message:"Subjects Can Only Be Copied Within The Same Course And Year."});
         }
 
-        // keep only the subjects that do not clash with what the section already has
-        // (these subjects were already checked when they were added to the other section,
-        //  so only the quick JavaScript checks run here , not the C++ program once per subject)
         const toAdd = from.subjects.filter((subject) =>{
             return !subjectFieldProblem(subject.name , subject.code) && !subjectClash(section , subject.name , subject.code);
         });

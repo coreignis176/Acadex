@@ -9,11 +9,9 @@ import { RoleBadge } from "../../components/StatusBadge";
 import { Loader } from "../../components/Loader";
 import { NoData } from "../../components/NoData";
 
-// one row of the list: a CR (or a pending request) with a button to remove / withdraw it
 const CrRow = ({student , onRemove}) =>{
     const isActive = student.crStatus === "active";
 
-    // the round seal icon: filled for a confirmed CR, dashed outline for a request still waiting
     let sealClass = "w-10 h-10 shrink-0 rounded-full hidden sm:flex items-center justify-center ";
     if(isActive){
         sealClass = sealClass + "bg-seal-soft text-seal";
@@ -27,7 +25,6 @@ const CrRow = ({student , onRemove}) =>{
         buttonText = "Remove from CR";
     }
 
-    // the student's section (it can be missing)
     let sectionId;
     let sectionLabel;
     if(student.section){
@@ -53,24 +50,21 @@ const CrRow = ({student , onRemove}) =>{
     )
 }
 
-// page listing the confirmed CRs and the CR requests still waiting for the student
 export const CrManagement = () =>{
     const Navigate = useNavigate();
-    const [lists , setLists] = useState({active:[] , pending:[]});   // both lists from the server
-    const [tab , setTab] = useState("active");                      // the open tab: "active" or "pending"
-    const [confirm , setConfirm] = useState(null);                  // the student waiting for "Are you sure?" confirmation
-    const [working , setWorking] = useState(false);                 // true while the server is working
+    const [lists , setLists] = useState({active:[] , pending:[]});
+    const [tab , setTab] = useState("active");
+    const [confirm , setConfirm] = useState(null);
+    const [working , setWorking] = useState(false);
     const {data , isLoading} = useGetadminstatsQuery();
     const [removecr] = useRemovecrMutation();
 
-    // runs every time new data arrives from the server and fills both lists
     useEffect(() =>{
         if(data && data.success && data.data){
             setLists({active:data.data.crAssignments , pending:data.data.pendingCrs});
         }
     },[data]);
 
-    //$ function to remove a CR or withdraw a pending request
     const handleRemove = async () =>{
         try{
             setWorking(true);
@@ -88,15 +82,13 @@ export const CrManagement = () =>{
 
     if(isLoading) return <Loader/>;
 
-    const rows = lists[tab];     // the list of the open tab
+    const rows = lists[tab];
 
-    // the two tab buttons
     const tabs = [
         {key:"active" , label:"Active" , count:lists.active.length},
         {key:"pending" , label:"Awaiting confirmation" , count:lists.pending.length}
     ];
 
-    // the list, or an empty message that fits the open tab
     let listContent;
     if(rows.length === 0){
         let emptyMessage = "No CR requests are waiting";
@@ -120,7 +112,6 @@ export const CrManagement = () =>{
         );
     }
 
-    // texts of the "Are you sure?" dialog: removing a confirmed CR, or withdrawing a request
     let confirmTitle = "";
     let confirmButton = "";
     let confirmMessage = "";
@@ -154,7 +145,6 @@ export const CrManagement = () =>{
                 <div className="flex flex-wrap items-center gap-3 p-4 border-b border-line">
                     <div className="inline-flex p-1 rounded-lg bg-canvas border border-line text-sm" role="tablist" aria-label="CR status">
                         {tabs.map((tabItem) =>{
-                            // the open tab looks raised (white with a shadow)
                             let buttonClass = "px-3 py-1.5 rounded-md inline-flex items-center gap-2 ";
                             if(tab === tabItem.key){
                                 buttonClass = buttonClass + "bg-white shadow-sm font-medium";
@@ -163,7 +153,6 @@ export const CrManagement = () =>{
                                 buttonClass = buttonClass + "text-muted hover:text-ink";
                             }
 
-                            // waiting requests are counted in the "waiting" colour
                             let countClass = "text-xs tabular-nums px-1.5 rounded ";
                             if(tabItem.key === "pending" && tabItem.count){
                                 countClass = countClass + "bg-wait-soft text-wait";

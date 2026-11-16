@@ -13,13 +13,11 @@ import { StudentPopup } from "./StudentPopup";
 import { StudentDetailsPopup } from "./StudentDetailsPopup";
 import { SectionSubjects } from "./SectionSubjects";
 
-// card showing "1/2 CRs appointed" + who holds each position
 const CrSummary = ({students , max}) =>{
     const active = students.filter((student) => student.crStatus === "active");
     const pending = students.filter((student) => student.crStatus === "pending");
     const used = active.length + pending.length;
 
-    // one "slot" per CR position: confirmed CRs first, then requests waiting, then open positions
     const slots = [];
     for(const student of active){
         slots.push({kind:"active" , name:student.name});
@@ -38,7 +36,6 @@ const CrSummary = ({students , max}) =>{
             <p className="text-2xl font-semibold tabular-nums">{active.length}/{max} <span className="text-base font-medium text-muted">CRs appointed</span></p>
             <ul className="flex flex-wrap gap-2">
                 {slots.map((slot , index) =>{
-                    // colour and text depend on the kind of slot (an open position is the default)
                     let slotClass = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs ";
                     let slotText = "Open position";
                     if(slot.kind === "active"){
@@ -65,17 +62,14 @@ const CrSummary = ({students , max}) =>{
     )
 }
 
-// one row of the desktop table; clicking anywhere on it opens the student's details
 const StudentTableRow = ({student , onOpen}) =>{
-    // confirmed CRs get a light "seal" background
     let rowClass = "cursor-pointer hover:bg-primary-soft/40 ";
     if(student.crStatus === "active"){
         rowClass = rowClass + "bg-seal-soft/30";
     }
 
-    //$ function to open the details when the name button is clicked
     const handleNameClick = (event) =>{
-        event.stopPropagation();   // the row has its own onClick; stop it from running a second time
+        event.stopPropagation();
         onOpen(student._id);
     }
 
@@ -94,9 +88,7 @@ const StudentTableRow = ({student , onOpen}) =>{
     )
 }
 
-// one item of the mobile list (small screens show this instead of the table)
 const StudentListItem = ({student , onOpen}) =>{
-    // confirmed CRs get a light "seal" background
     let buttonClass = "w-full text-left flex items-center gap-3 px-4 py-3.5 ";
     if(student.crStatus === "active"){
         buttonClass = buttonClass + "bg-seal-soft/30";
@@ -116,9 +108,7 @@ const StudentListItem = ({student , onOpen}) =>{
     )
 }
 
-// the Students tab: totals, CR summary, a search box and the list of students
 const StudentsTab = ({section , students , maxCrs , search , setSearch , filtered , onOpen , onAdd}) =>{
-    // archived sections can't take new students, so their empty list has no button
     let emptyButtonText;
     let emptyButtonClick;
     if(!section.archived){
@@ -126,7 +116,6 @@ const StudentsTab = ({section , students , maxCrs , search , setSearch , filtere
         emptyButtonClick = onAdd;
     }
 
-    // what goes below the search box: an empty message, a "no match" message, or the students
     let listContent;
     if(students.length === 0){
         listContent = (
@@ -142,7 +131,6 @@ const StudentsTab = ({section , students , maxCrs , search , setSearch , filtere
     else{
         listContent = (
             <>
-                {/* desktop table */}
                 <table className="hidden md:table w-full text-sm">
                     <thead>
                         <tr className="text-left text-muted bg-canvas/60 border-b border-line">
@@ -158,7 +146,6 @@ const StudentsTab = ({section , students , maxCrs , search , setSearch , filtere
                     </tbody>
                 </table>
 
-                {/* mobile list */}
                 <ul className="md:hidden divide-y divide-line">
                     {filtered.map((student) => <StudentListItem key={student._id} student={student} onOpen={onOpen}/>)}
                 </ul>
@@ -166,7 +153,6 @@ const StudentsTab = ({section , students , maxCrs , search , setSearch , filtere
         );
     }
 
-    // small text on the right of the search box
     let searchSummary = "Sorted by class roll number";
     if(search){
         searchSummary = `${filtered.length} of ${students.length} students`;
@@ -174,7 +160,6 @@ const StudentsTab = ({section , students , maxCrs , search , setSearch , filtere
 
     return (
         <>
-            {/* summary */}
             <div className="grid gap-4 md:grid-cols-[260px_1fr] mb-5">
                 <div className="bg-white border border-line rounded-2xl p-5">
                     <div className="flex items-center justify-between">
@@ -204,24 +189,21 @@ const StudentsTab = ({section , students , maxCrs , search , setSearch , filtere
     )
 }
 
-// page of one section with two tabs: its students (with CR status) and its subjects
 export const SectionStudents = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const {sectionId} = useParams();
-    // the open tab is kept in the URL: ?tab=subjects -> Subjects , anything else -> Students
     const [params , setParams] = useSearchParams();
     let tab = "students";
     if(params.get("tab") === "subjects"){
         tab = "subjects";
     }
     const studentPopup = useSelector((state) => state.portal.studentPopup);
-    const [details , setDetails] = useState(null);   // the section, its students and subjects from the server
-    const [search , setSearch] = useState("");        // text typed in the search box
-    const [openId , setOpenId] = useState(null);      // _id of the student whose details popup is open
+    const [details , setDetails] = useState(null);
+    const [search , setSearch] = useState("");
+    const [openId , setOpenId] = useState(null);
     const {data , isLoading , error} = useGetsectionQuery({sectionId});
 
-    // runs every time new data arrives from the server and copies it into state
     useEffect(() =>{
         if(data && data.success && data.data){
             setDetails(data.data);
@@ -233,12 +215,10 @@ export const SectionStudents = () =>{
         buttonText="Back to Academic Structure" onClick={() => Navigate("/admin/structure")}/>;
     if(!details) return <Loader/>;
 
-    // take the values out of "details"
     const section = details.section;
     const students = details.students;
     const crSlotsUsed = details.crSlotsUsed;
     const maxCrs = details.maxCrs;
-    // subjects and siblings become [] when the server leaves them out
     let subjects = details.subjects;
     if(subjects === undefined){
         subjects = [];
@@ -248,26 +228,22 @@ export const SectionStudents = () =>{
         siblings = [];
     }
 
-    // students matching the search box: name, class roll or college roll
     const query = search.trim().toLowerCase();
     const filtered = students.filter((student) =>{
-        if(!query) return true;    // empty search box -> show everyone
+        if(!query) return true;
         if(student.name.toLowerCase().includes(query)) return true;
         if(String(student.classRollNo).toLowerCase().includes(query)) return true;
         if(student.rollNo.toLowerCase().includes(query)) return true;
         return false;
     });
 
-    // look the open student up in the latest list, so the popup shows live data after every change
     let openStudent = null;
     if(openId){
         openStudent = students.find((student) => student._id === openId);
     }
 
-    //$ function to open the "Add a student" popup
     const openAdd = () => dispatch(setStudentPopup({sectionId:section._id , label:section.label}));
 
-    //$ function to switch tabs by changing the URL (?tab=subjects , or nothing for Students)
     const openTab = (key) =>{
         if(key === "students"){
             setParams({} , {replace:true});
@@ -277,13 +253,11 @@ export const SectionStudents = () =>{
         }
     }
 
-    // the two tab buttons
     const tabs = [
         {key:"students" , label:"Students" , count:students.length , icon:<LuUsers className="w-4 h-4"/>},
         {key:"subjects" , label:"Subjects" , count:subjects.length , icon:<LuBookOpen className="w-4 h-4"/>}
     ];
 
-    // text under the page title, depending on the open tab
     let headerDescription;
     if(tab === "subjects"){
         headerDescription = `${section.course}, ${section.yearLabel}. Add the subjects students of this section study.`;
@@ -292,7 +266,6 @@ export const SectionStudents = () =>{
         headerDescription = `${section.course}, ${section.yearLabel}. Click a student to appoint a CR, edit details or remove them.`;
     }
 
-    // the "Add a student" button on the right of the title (only on the Students tab of an active section)
     let headerAction = false;
     if(!section.archived && tab === "students"){
         headerAction = (
@@ -302,7 +275,6 @@ export const SectionStudents = () =>{
         );
     }
 
-    // what is shown below the tab buttons
     let tabContent;
     if(tab === "subjects"){
         tabContent = <SectionSubjects section={section} subjects={subjects} siblings={siblings}/>;
@@ -330,10 +302,8 @@ export const SectionStudents = () =>{
                 <p className="mb-4 text-sm bg-wait-soft text-wait rounded-lg px-4 py-3">This section is archived. Restore it from Academic Structure to add students again.</p>
             )}
 
-            {/* tabs */}
             <div className="flex gap-6 border-b border-line mb-5" role="tablist" aria-label="Section">
                 {tabs.map((tabItem) =>{
-                    // the open tab is underlined in the primary colour
                     let buttonClass = "pb-3 -mb-px border-b-2 text-sm inline-flex items-center gap-2 ";
                     let countClass = "px-1.5 rounded-full text-xs tabular-nums ";
                     if(tab === tabItem.key){

@@ -14,22 +14,18 @@ import { makeNoteForm, pagesProblem } from "../../utils/notePages";
 import { timeAgo } from "../../utils/format";
 import { NoSection } from "./NoSection";
 
-// react-hook-form "validate" rules: return true when the value is fine, otherwise the error message to show
-//$ function to check that the title has 4 to 80 characters
 const checkTitle = (value) =>{
     const length = value.trim().length;
     if(length >= 4 && length <= 80) return true;
     return "Use 4-80 characters";
 }
 
-//$ function to check that the topic has 2 to 60 characters
 const checkTopic = (value) =>{
     const length = value.trim().length;
     if(length >= 2 && length <= 60) return true;
     return "Use 2-60 characters";
 }
 
-// green message shown after a successful upload
 const UploadSuccess = ({result}) =>{
     const pageWord = result.pages === 1 ? "page" : "pages";
     let statusText = "It appears in All Notes once your CR approves it. Track it on the right.";
@@ -46,7 +42,6 @@ const UploadSuccess = ({result}) =>{
     )
 }
 
-// the "Your uploads" box: every note I uploaded, with its status
 const MyUploads = ({loading , uploads , onOpen}) =>{
     let content;
     if(loading){
@@ -59,13 +54,10 @@ const MyUploads = ({loading , uploads , onOpen}) =>{
         content = (
             <ul className="divide-y divide-line max-h-[560px] overflow-y-auto thin-scroll">
                 {uploads.map((note) =>{
-                    // small grey line, e.g. "TCS302, Heaps, 4 pages"
                     let topicPart = "";
                     if(note.topic) topicPart = `, ${note.topic}`;
                     const pageWord = note.pages === 1 ? "page" : "pages";
 
-                    // a pending note shows its place in the CR's line, e.g. "#3 in line"
-                    // (queuePosition comes from the backend, found by our C queue , job "position")
                     let lineText = "";
                     if(note.status === "pending" && note.queuePosition){
                         lineText = "#" + note.queuePosition + " in line";
@@ -107,38 +99,33 @@ const MyUploads = ({loading , uploads , onOpen}) =>{
     )
 }
 
-// Upload Notes: a form to upload note pages, and a list of my own uploads with their status
 export const UploadNotes = () =>{
     const user = useSelector((state) => state.user.user);
     const hasSection = Boolean(user && user.sectionId);
     const isCr = Boolean(user && user.crStatus === "active");
-    const [pages , setPages] = useState([]); // the page photos picked for this note
-    const [pagesError , setPagesError] = useState(""); // error message about the pages ("" = no error)
-    const [uploading , setUploading] = useState(false); // true while the upload is running
-    const [lastResult , setLastResult] = useState(null); // info about the last successful upload (null = none)
-    const [openNote , setOpenNote] = useState(null); // the upload opened in the details popup (null = closed)
+    const [pages , setPages] = useState([]);
+    const [pagesError , setPagesError] = useState("");
+    const [uploading , setUploading] = useState(false);
+    const [lastResult , setLastResult] = useState(null);
+    const [openNote , setOpenNote] = useState(null);
     const subjectsResult = useGetsubjectlistQuery(undefined , {skip:!hasSection});
     const mineResult = useGetmysubmissionsQuery(undefined , {skip:!hasSection});
     const [submitnote] = useSubmitnoteMutation();
-    // errors holds the validation message of each field that failed
     const {register , handleSubmit , watch , reset , formState:{errors}} = useForm({defaultValues:{title:"" , subject:"" , topic:"" , description:""}});
 
     let subjects = [];
     if(subjectsResult.data && subjectsResult.data.data) subjects = subjectsResult.data.data;
-    // watch() gives the current value of a form field, so the subject code and character count update while typing
     const chosen = subjects.find((subject) => subject.name === watch("subject"));
     const description = watch("description") || "";
 
     if(!hasSection) return <NoSection/>;
 
-    //$ function to save the picked pages and clear old messages
     const changePages = (next) =>{
         setPages(next);
         setPagesError("");
         setLastResult(null);
     }
 
-    //$ function to upload the note with its page images
     const handleOnSubmit = async (form) =>{
         const problem = pagesProblem(pages);
         if(problem){
@@ -163,17 +150,14 @@ export const UploadNotes = () =>{
         }
     }
 
-    // Tailwind classes shared by the form inputs
     const field = "w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-sm focus:outline-none focus:border-primary disabled:bg-canvas";
 
     let uploads = [];
     if(mineResult.data && mineResult.data.data) uploads = mineResult.data.data;
 
-    // the subject code box fills itself in when a subject is chosen
     let chosenCode = "";
     if(chosen && chosen.code) chosenCode = chosen.code;
 
-    // the character counter turns red above 300 characters
     let counterColor = "text-muted";
     if(description.length > 300) counterColor = "text-bad";
     const counterClass = `text-xs tabular-nums ${counterColor}`;
@@ -183,12 +167,10 @@ export const UploadNotes = () =>{
 
     const pageWord = pages.length === 1 ? "page" : "pages";
 
-    // text on the upload button
     let buttonText = "Upload for approval";
     if(uploading) buttonText = "Uploading...";
     else if(isCr) buttonText = "Upload and publish";
 
-    // left side: a loader, a "no subjects" message, or the upload form
     let formArea;
     if(subjectsResult.isLoading){
         formArea = <Loader/>;
@@ -211,7 +193,6 @@ export const UploadNotes = () =>{
                     <PagePicker pages={pages} onChange={changePages} disabled={uploading} error={pagesError}/>
                 </div>
 
-                {/* {...register(...)} connects the input to the form and gives it its rules */}
                 <div>
                     <label htmlFor="up-title" className="block text-sm font-medium mb-1.5">Note Title</label>
                     <input id="up-title" disabled={uploading} className={field} placeholder="e.g. Heaps and Priority Queues - Unit 4"
@@ -279,7 +260,6 @@ export const UploadNotes = () =>{
             <div className="grid gap-6 lg:grid-cols-[1fr_340px] items-start">
                 {formArea}
 
-                {/* my uploads */}
                 <MyUploads loading={mineResult.isLoading} uploads={uploads} onOpen={setOpenNote}/>
             </div>
 

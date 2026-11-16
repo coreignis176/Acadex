@@ -5,17 +5,15 @@ import { getsubjects, getsubjectlist, getnotes, getmysubmissions, submitnote, re
 
 const router = express.Router();
 
-// mounted at /notes  -> every route: logged in + student (CRs are students too)
 router.route("/getsubjects").get(validateUser , isStudent , getsubjects);
 router.route("/getsubjectlist").get(validateUser , isStudent , getsubjectlist);
 router.route("/getnotes").get(validateUser , isStudent , getnotes);
 router.route("/getmysubmissions").get(validateUser , isStudent , getmysubmissions);
-router.route("/submitnote").post(validateUser , isStudent , uploadPages , submitnote);     // form-data with "pages" images
+router.route("/submitnote").post(validateUser , isStudent , uploadPages , submitnote);
 router.route("/reactnote").post(validateUser , isStudent , reactnote);
 
-// Recently Viewed (a stack, run by our C program connect_pbl/c/recent_stack.c)
-router.route("/viewnote").post(validateUser , isStudent , viewnote);          // a note was opened -> push
-router.route("/getrecent").get(validateUser , isStudent , getrecent);         // the history page -> show
-router.route("/clearrecent").post(validateUser , isStudent , clearrecent);    // "Clear history" -> clear
+router.route("/viewnote").post(validateUser , isStudent , viewnote);
+router.route("/getrecent").get(validateUser , isStudent , getrecent);
+router.route("/clearrecent").post(validateUser , isStudent , clearrecent);
 
 export default router;

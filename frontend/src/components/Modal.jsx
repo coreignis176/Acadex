@@ -1,12 +1,8 @@
 import { useEffect } from "react";
 import { IoClose } from "react-icons/io5";
 
-// a popup window with a title, a close button and any content inside
-// overlay pattern from PetCare: fixed inset-0 + blurred backdrop that closes on click
 export const Modal = ({title , description , onClose , children , width = "max-w-lg"}) =>{
 
-    // runs when the popup opens (and again if onClose changes):
-    // the Escape key closes the popup and the page behind it stops scrolling
     useEffect(() =>{
         const onKey = (event) =>{
             if(event.key === "Escape") onClose();
@@ -14,7 +10,6 @@ export const Modal = ({title , description , onClose , children , width = "max-w
         document.addEventListener("keydown" , onKey);
         document.body.style.overflow = "hidden";
 
-        // cleanup: runs when the popup closes -> remove the key listener and let the page scroll again
         return () =>{
             document.removeEventListener("keydown" , onKey);
             document.body.style.overflow = "";

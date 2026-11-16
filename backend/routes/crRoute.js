@@ -4,7 +4,6 @@ import { getsectionnotes, reviewnote, deletenote, getcrstats } from "../controll
 
 const router = express.Router();
 
-// mounted at /cr  -> every route: logged in + active CR
 router.route("/getsectionnotes").get(validateUser , isCr , getsectionnotes);
 router.route("/reviewnote").post(validateUser , isCr , reviewnote);
 router.route("/deletenote/:id").delete(validateUser , isCr , deletenote);

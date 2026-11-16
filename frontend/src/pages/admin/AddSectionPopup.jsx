@@ -10,20 +10,17 @@ import { useAddsectionMutation } from "../../store/Api/Api";
 import { CSV_COLUMNS, MAX_CSV_BYTES, MAX_CSV_ROWS, readStudentCsv, readTypedStudents, downloadCsvTemplate } from "../../utils/csv";
 import { fileSize } from "../../utils/format";
 
-// the two ways to give the student list
 const SOURCES = [
     {value:"csv" , label:"Upload CSV" , icon:LuUpload},
     {value:"manual" , label:"Type manually" , icon:LuKeyboard}
 ];
 
-// two buttons at the top of the student list: "Upload CSV" or "Type manually"
 const SourceTabs = ({source , onChange}) =>{
     return (
         <div className="inline-flex rounded-xl border border-line bg-canvas p-1" role="tablist" aria-label="How to add students">
             {SOURCES.map((option) =>{
                 const Icon = option.icon;
                 const active = source === option.value;
-                // the picked tab is white, the other one is grey
                 let tabClass = "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm text-muted hover:text-ink";
                 if(active) tabClass = "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-sm bg-white text-ink font-medium shadow-sm";
                 return (
@@ -36,13 +33,9 @@ const SourceTabs = ({source , onChange}) =>{
     )
 }
 
-// the students typed by hand: one line per student (name , class roll no , college roll no)
-// rows       = what is typed: [{id , name , classRollNo , collegeRollNo}]
-// errorsByRow= {rowNumber:[messages]} -> shown under that line
 const ManualStudents = ({rows , errorsByRow , focusId , onChangeCell , onAddRow , onRemoveRow}) =>{
     const input = "w-full px-3 py-2 rounded-lg border bg-white text-sm focus:outline-none focus:border-primary";
 
-    //$ function for the Enter key: Enter on the LAST line adds a new line (it never submits the form)
     const handleKeyDown = (event , index) =>{
         if(event.key !== "Enter") return;
         event.preventDefault();
@@ -51,7 +44,6 @@ const ManualStudents = ({rows , errorsByRow , focusId , onChangeCell , onAddRow 
 
     return (
         <div className="rounded-xl border border-line overflow-hidden">
-            {/* column names (hidden on small screens, there every box has its own placeholder) */}
             <div className="hidden sm:grid grid-cols-[2.5rem_1fr_9rem_11rem_2.5rem] gap-2 px-3 py-2 bg-canvas text-xs text-muted">
                 <span>#</span><span>Student Name</span><span>Class Roll No.</span><span>College Roll No.</span><span/>
             </div>
@@ -60,7 +52,6 @@ const ManualStudents = ({rows , errorsByRow , focusId , onChangeCell , onAddRow 
                 {rows.map((row , index) =>{
                     const rowNumber = index + 1;
                     const problems = errorsByRow[rowNumber] || [];
-                    // a line with a problem gets a red border on its boxes
                     let border = "border-line";
                     if(problems.length > 0) border = "border-bad/50";
 
@@ -71,7 +62,6 @@ const ManualStudents = ({rows , errorsByRow , focusId , onChangeCell , onAddRow 
                                 <input value={row.name} onChange={(event) => onChangeCell(row.id , "name" , event.target.value)}
                                     onKeyDown={(event) => handleKeyDown(event , index)} autoFocus={row.id === focusId}
                                     placeholder="Student name, e.g. Priya Negi" aria-label={`Student ${rowNumber} name`} className={`${input} ${border}`}/>
-                                {/* on small screens the delete button sits next to the name, the roll numbers go below */}
                                 <button type="button" onClick={() => onRemoveRow(row.id)} aria-label={`Remove student ${rowNumber}`}
                                     className="sm:hidden p-2 rounded-md text-muted hover:text-bad hover:bg-bad-soft justify-self-center"><LuTrash2 className="w-4 h-4"/></button>
                                 <input value={row.classRollNo} onChange={(event) => onChangeCell(row.id , "classRollNo" , event.target.value)}
@@ -106,29 +96,24 @@ const ManualStudents = ({rows , errorsByRow , focusId , onChangeCell , onAddRow 
     )
 }
 
-// returns the first file of a file list (from a file input or a drag and drop), or null when there is none
 const firstFile = (fileList) =>{
     if(fileList && fileList.length > 0) return fileList[0];
     return null;
 }
 
-// shows the text of one CSV cell, or a grey "empty" when the cell is blank
 const CellText = ({text}) =>{
     if(text) return text;
     return <span className="text-muted italic">empty</span>;
 }
 
-// one row of the CSV preview table: the student's values and either their problems or "Ready"
 const PreviewRow = ({student}) =>{
     const hasProblems = student.errors.length > 0;
 
-    // rows with problems get a light red background
     let rowClass = "";
     if(hasProblems){
         rowClass = "bg-bad-soft/30";
     }
 
-    // the last column: the list of problems, or a green "Ready"
     let status;
     if(hasProblems){
         status = <ul className="text-bad text-xs leading-snug">{student.errors.map((message) => <li key={message}>{message}</li>)}</ul>;
@@ -150,13 +135,10 @@ const PreviewRow = ({student}) =>{
     )
 }
 
-// the CSV preview: a summary bar ("x students found") and a table of every row
 const CsvPreview = ({rows , visibleRows , problemCount , onlyProblems , setOnlyProblems}) =>{
-    // "student" or "students"
     let studentWord = "students";
     if(rows.length === 1) studentWord = "student";
 
-    // the sentence after "x students found."
     let summaryText = "Everything looks right.";
     if(problemCount === 1){
         summaryText = "1 row needs fixing. Correct the file and upload it again.";
@@ -165,7 +147,6 @@ const CsvPreview = ({rows , visibleRows , problemCount , onlyProblems , setOnlyP
         summaryText = `${problemCount} rows need fixing. Correct the file and upload it again.`;
     }
 
-    // red bar with a warning icon when something is wrong, green bar with a tick when all is fine
     let barClass = "flex flex-wrap items-center gap-3 px-4 py-3 text-sm ";
     let barIcon;
     if(problemCount){
@@ -212,57 +193,40 @@ const CsvPreview = ({rows , visibleRows , problemCount , onlyProblems , setOnlyP
     )
 }
 
-// popup to create a new section and register its students from a CSV file OR typed by hand
-// payload: {mode:"add" , courseId , year , label}
-// 1. section name  2. student CSV or typed list  3. checks  4. confirm -> section + students saved together
-// (the server gets the same {row , name , classRollNo , collegeRollNo} list both ways)
-//
-// How the CSV preview works:
-// - the admin picks a .csv file, the browser reads it and readStudentCsv() turns it into rows ("parsed")
-// - every row carries a list of problems found in the browser (empty name, bad roll number, ...)
-// - if the server later rejects some rows (e.g. roll number already registered) those messages
-//   are stored in "serverErrors" and added to the matching rows
-// - the section can only be created when there is at least one row and no row has a problem
 export const AddSectionPopup = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
-    const popup = useSelector((state) => state.portal.sectionPopup);   // {mode:"add" , courseId , year , label}
+    const popup = useSelector((state) => state.portal.sectionPopup);
     const [addsection] = useAddsectionMutation();
-    const [saving , setSaving] = useState(false);              // true while the server creates the section
-    const [file , setFile] = useState(null);                   // name and size of the chosen file: {name , size}
-    const [parsed , setParsed] = useState(null);               // what the CSV reader found: {students , problems} or {error}
-    const [serverErrors , setServerErrors] = useState({});     // row number -> [messages] returned by the server
-    const [onlyProblems , setOnlyProblems] = useState(false);  // is "Only show problems" ticked?
-    const [source , setSource] = useState("csv");              // "csv" = upload a file , "manual" = type the students
-    const nextId = useRef(2);                                  // a new id for every typed line (React needs a key that never changes)
+    const [saving , setSaving] = useState(false);
+    const [file , setFile] = useState(null);
+    const [parsed , setParsed] = useState(null);
+    const [serverErrors , setServerErrors] = useState({});
+    const [onlyProblems , setOnlyProblems] = useState(false);
+    const [source , setSource] = useState("csv");
+    const nextId = useRef(2);
     const [typedRows , setTypedRows] = useState([{id:1 , name:"" , classRollNo:"" , collegeRollNo:""}]);
-    const [focusId , setFocusId] = useState(null);             // the line that was just added gets the cursor
+    const [focusId , setFocusId] = useState(null);
     const {register , handleSubmit , formState:{errors}} = useForm({mode:"onChange"});
 
-    //$ function to close the popup
     const close = () => dispatch(setSectionPopup(false));
 
-    //$ function to switch between "Upload CSV" and "Type manually"
-    // (both lists are kept, so switching back does not lose anything; old server messages are cleared)
     const handleSource = (value) =>{
         setSource(value);
         setServerErrors({});
         setOnlyProblems(false);
     }
 
-    //$ function to change one box of one typed line , e.g. ("name" of line 3 = "Priya")
     const handleChangeCell = (id , key , value) =>{
-        setServerErrors({});          // the list changed -> old server messages may be wrong now
+        setServerErrors({});
         setTypedRows((current) => current.map((row) =>{
             if(row.id !== id) return row;
-            // copy the line and change only one box
             const changed = Object.assign({} , row);
             changed[key] = value;
             return changed;
         }));
     }
 
-    //$ function to add an empty line at the end (and put the cursor in it)
     const handleAddRow = () =>{
         if(typedRows.length >= MAX_CSV_ROWS) return;
         const id = nextId.current;
@@ -271,7 +235,6 @@ export const AddSectionPopup = () =>{
         setFocusId(id);
     }
 
-    //$ function to remove a typed line (the last line is only emptied, so there is always one line)
     const handleRemoveRow = (id) =>{
         setServerErrors({});
         setTypedRows((current) =>{
@@ -280,13 +243,11 @@ export const AddSectionPopup = () =>{
         });
     }
 
-    //$ function to read and validate the chosen CSV file
     const handleFile = async (picked) =>{
         setServerErrors({});
         setOnlyProblems(false);
         if(!picked) return;
         setFile({name:picked.name , size:picked.size});
-        // the file name must end with ".csv" (capital or small letters)
         if(!/\.csv$/i.test(picked.name)){
             setParsed({error:"Please choose a .csv file. In Excel or Google Sheets use File > Download > CSV."});
             return;
@@ -296,7 +257,7 @@ export const AddSectionPopup = () =>{
             return;
         }
         try{
-            const text = await picked.text();     // the whole file as one string
+            const text = await picked.text();
             setParsed(readStudentCsv(text));
         }
         catch{
@@ -304,26 +265,21 @@ export const AddSectionPopup = () =>{
         }
     }
 
-    //$ function to handle a file chosen with the file picker
     const handleChoose = (event) =>{
         handleFile(firstFile(event.target.files));
     }
 
-    //$ function to handle a file dropped onto the upload box
     const handleDrop = (event) =>{
-        event.preventDefault();   // stop the browser from opening the file in the tab
+        event.preventDefault();
         handleFile(firstFile(event.dataTransfer.files));
     }
 
-    //$ function to forget the chosen file
     const clearFile = () =>{
         setFile(null);
         setParsed(null);
         setServerErrors({});
     }
 
-    // the students of the chosen way: from the CSV file , or the lines typed by hand
-    // (both are checked with the same rules - see utils/csv.js)
     let students = [];
     if(source === "manual"){
         students = readTypedStudents(typedRows).students;
@@ -332,11 +288,9 @@ export const AddSectionPopup = () =>{
         students = parsed.students;
     }
 
-    // the rows: browser checks + conflicts the server reported (e.g. roll number already registered)
     const rows = [];
     for(const student of students){
         const messagesFromServer = serverErrors[student.row] || [];
-        // copy the row and join both lists of problems into one
         rows.push({
             row:student.row,
             name:student.name,
@@ -348,16 +302,13 @@ export const AddSectionPopup = () =>{
 
     const problemRows = rows.filter((row) => row.errors.length > 0);
     const problemCount = problemRows.length;
-    // "Only show problems" hides the rows that are fine
     const visibleRows = onlyProblems ? problemRows : rows;
     const ready = rows.length > 0 && problemCount === 0;
 
-    //$ function to create the section and register every student
     const handleOnSubmit = async (form) =>{
         if(!ready) return;
         try{
             setSaving(true);
-            // send only the four columns the server needs (not the lists of problems)
             const studentsToSave = rows.map((row) => ({row:row.row , name:row.name , classRollNo:row.classRollNo , collegeRollNo:row.collegeRollNo}));
             const result = await addsection({
                 courseId:popup.courseId,
@@ -368,17 +319,15 @@ export const AddSectionPopup = () =>{
             if(result?.success){
                 toast.success(result.message);
                 close();
-                Navigate(`/admin/sections/${result.data.section._id}?tab=subjects`);   // next step: add the section's subjects
+                Navigate(`/admin/sections/${result.data.section._id}?tab=subjects`);
             }
         }
         catch(error){
-            // the server may answer with a list of problems, one item per bad CSV row: {row , message}
             let list = [];
             if(error && error.data && error.data.data && error.data.data.errors){
                 list = error.data.data.errors;
             }
             if(list.length > 0){
-                // group the messages by row number -> {5:["..."] , 9:["..." , "..."]}
                 const messagesByRow = {};
                 for(const item of list){
                     if(!messagesByRow[item.row]){
@@ -398,7 +347,6 @@ export const AddSectionPopup = () =>{
 
     const field = "w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-sm focus:outline-none focus:border-primary";
 
-    // the CSV box: a drop zone while no file is chosen, otherwise the file's name with Replace / Remove
     let fileBox;
     if(!file){
         fileBox = (
@@ -412,7 +360,6 @@ export const AddSectionPopup = () =>{
         );
     }
     else{
-        // fileSize() gives "" for very small files
         let sizeText = fileSize(file.size);
         if(!sizeText) sizeText = "under 1 KB";
 
@@ -429,19 +376,16 @@ export const AddSectionPopup = () =>{
         );
     }
 
-    // a problem with the whole file (wrong type, too big, missing column, ...)
     let fileError = null;
     if(parsed && parsed.error){
         fileError = parsed.error;
     }
 
-    // the problems of every typed line: {rowNumber:[messages]} (browser checks + server answers)
     const errorsByRow = {};
     for(const row of rows){
         if(row.errors.length > 0) errorsByRow[row.row] = row.errors;
     }
 
-    // text of the main button
     let submitText = "Upload a valid CSV to continue";
     if(source === "manual"){
         submitText = "Type at least one student to continue";
@@ -461,10 +405,8 @@ export const AddSectionPopup = () =>{
         <Modal onClose={close} width="max-w-3xl" title="Add section" description={`Create a section in ${popup.label} and register its students from a CSV file or by typing them in.`}>
             <form onSubmit={handleSubmit(handleOnSubmit)} className="flex flex-col gap-5" noValidate>
 
-                {/* 1. name */}
                 <div>
                     <label htmlFor="section-name" className="block text-sm font-medium mb-1.5">Section name</label>
-                    {/* {...register(...)} connects this input to the form and gives it its rules */}
                     <input id="section-name" autoFocus placeholder="e.g. Section A or ML4" className={`${field} max-w-sm`}
                         {...register("name" , {
                             required:"Enter a section name",
@@ -474,7 +416,6 @@ export const AddSectionPopup = () =>{
                     {errors.name && <p className="text-bad text-xs mt-1">{errors.name.message}</p>}
                 </div>
 
-                {/* 2. the student list: upload a CSV file OR type the students */}
                 <div>
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
                         <p className="text-sm font-medium">Student list</p>
@@ -499,14 +440,12 @@ export const AddSectionPopup = () =>{
                     )}
                 </div>
 
-                {/* file-level problem */}
                 {source === "csv" && fileError && (
                     <div className="flex gap-2.5 rounded-xl bg-bad-soft text-bad px-4 py-3 text-sm">
                         <LuCircleAlert className="w-5 h-5 shrink-0"/> <p>{fileError}</p>
                     </div>
                 )}
 
-                {/* 3. preview of the CSV file (typed students show their problems right under each line) */}
                 {source === "csv" && rows.length > 0 && (
                     <CsvPreview rows={rows} visibleRows={visibleRows} problemCount={problemCount}
                         onlyProblems={onlyProblems} setOnlyProblems={setOnlyProblems}/>

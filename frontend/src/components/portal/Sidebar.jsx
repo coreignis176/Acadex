@@ -8,7 +8,6 @@ import { useGetnotificationsQuery, useGetsectionnotesQuery } from "../../store/A
 import { useAccountActions } from "./useAccountActions";
 import { initials } from "../../utils/format";
 
-// the student's place in the academic hierarchy, drawn as a small tree
 const HierarchyPath = ({section}) =>{
     if(!section) return (
         <p className="text-xs text-muted px-1">Not assigned to a section</p>
@@ -17,7 +16,6 @@ const HierarchyPath = ({section}) =>{
     return (
         <ol aria-label="Your section" className="text-sm">
             {rows.map((row , index) =>{
-                // the last row (the section) is shown darker
                 let rowClass = "text-muted";
                 if(index === rows.length - 1){
                     rowClass = "font-semibold text-ink";
@@ -33,18 +31,14 @@ const HierarchyPath = ({section}) =>{
     )
 }
 
-// one link in the sidebar menu, with an optional number badge
-// NavLink tells us isActive = true when the link is the page we are on
 const SidebarLink = ({item , count , onClick}) =>{
     const Icon = item.icon;
 
-    // the "approvals" badge is orange, the others are blue
     let badgeClass = "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-semibold flex items-center justify-center bg-primary text-white";
     if(item.badge === "approvals"){
         badgeClass = "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-semibold flex items-center justify-center bg-wait text-white";
     }
 
-    //$ function to pick the classes of the link (blue when it is the page we are on)
     const linkClass = ({isActive}) =>{
         if(isActive){
             return "relative flex items-center gap-3 px-3 py-2 rounded-lg text-[0.95rem] bg-primary-soft text-primary font-medium";
@@ -52,7 +46,6 @@ const SidebarLink = ({item , count , onClick}) =>{
         return "relative flex items-center gap-3 px-3 py-2 rounded-lg text-[0.95rem] text-ink/75 hover:bg-canvas hover:text-ink";
     }
 
-    //$ function to draw the inside of the link (a blue bar on the left when it is the page we are on)
     const linkContent = ({isActive}) => (
         <>
             {isActive && <span aria-hidden="true" className="absolute -left-3 top-1.5 bottom-1.5 w-[3px] rounded-r bg-primary"/>}
@@ -75,22 +68,19 @@ const SidebarLink = ({item , count , onClick}) =>{
     )
 }
 
-// the left menu of a portal: logo, portal switch, the user's class, links, and the account buttons
 export const Sidebar = ({portal}) =>{
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
 
-    // two lists from the server: my notifications, and (CR portal only) my section's notes
     const notificationsResult = useGetnotificationsQuery();
     const sectionNotesResult = useGetsectionnotesQuery(undefined , {skip:portal !== "cr"});
     const {handleLogout , handleChangePassword} = useAccountActions();
 
-    // details of the logged-in user (empty when nobody is logged in)
     let userName;
     let section;
     let isAdmin = false;
-    let isCr = false;                 // a student who is a confirmed Class Representative
-    let accountLine;                  // email for admins, roll number for students
+    let isCr = false;
+    let accountLine;
     if(user){
         userName = user.name;
         section = user.section;
@@ -100,7 +90,6 @@ export const Sidebar = ({portal}) =>{
         if(isAdmin) accountLine = user.email;
     }
 
-    // the small numbers next to some links: unread notifications and notes waiting for approval
     let unreadCount = 0;
     if(notificationsResult.data && notificationsResult.data.data){
         unreadCount = notificationsResult.data.data.filter((item) => !item.read).length;
@@ -114,11 +103,8 @@ export const Sidebar = ({portal}) =>{
         approvals:approvalsCount
     };
 
-    //$ function to close the mobile drawer (its open / closed state is kept in Redux)
     const close = () => dispatch(toggleSidebar(false));
 
-    // the box under the logo: admins see "Admin portal", the CR portal shows the section tree,
-    // and the student portal shows the student's section
     let sectionText = "Not in a section yet";
     if(section) sectionText = `Section ${section.name}`;
 
@@ -143,7 +129,6 @@ export const Sidebar = ({portal}) =>{
         );
     }
 
-    // the Student / CR switch: the open portal's tab is white
     let studentTabClass = "text-center py-1.5 rounded-md text-muted hover:text-ink";
     if(portal === "student"){
         studentTabClass = "text-center py-1.5 rounded-md bg-white shadow-sm font-medium text-ink";
@@ -153,7 +138,6 @@ export const Sidebar = ({portal}) =>{
         crTabClass = "text-center py-1.5 rounded-md inline-flex items-center justify-center gap-1 bg-white shadow-sm font-medium text-seal";
     }
 
-    // CRs have a bronze circle, everyone else a blue one
     let avatarClass = "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold bg-primary-soft text-primary";
     if(isCr){
         avatarClass = "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold bg-seal-soft text-seal";
@@ -169,7 +153,6 @@ export const Sidebar = ({portal}) =>{
                 </NavLink>
             </div>
 
-            {/* className is given as a function on purpose: with a plain text NavLink would add an extra "active" class */}
             {isCr && (
                 <div className="mx-4 mb-3 grid grid-cols-2 p-1 rounded-lg bg-canvas border border-line text-sm" role="tablist" aria-label="Switch portal">
                     <NavLink to="/student" onClick={close} className={() => studentTabClass}>Student</NavLink>
@@ -186,7 +169,6 @@ export const Sidebar = ({portal}) =>{
             <nav className="flex-1 overflow-y-auto thin-scroll px-3" aria-label="Portal">
                 <ul className="flex flex-col gap-0.5">
                     {portalLinks[portal].map((item) =>{
-                        // links without a badge get 0, so no number is shown
                         let count = 0;
                         if(item.badge) count = badges[item.badge];
                         return <SidebarLink key={item.to} item={item} count={count} onClick={close}/>;

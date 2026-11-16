@@ -2,7 +2,6 @@ import { LuArrowRight, LuFileText } from "react-icons/lu";
 import { SubjectIcon } from "../../components/SubjectIcon";
 import { scattered } from "./homeData";
 
-// the "after" list: each subject with its number of notes
 const organised = [
     {subject:"Data Structures" , count:4},
     {subject:"Object Oriented Programming (C++)" , count:3},
@@ -10,7 +9,6 @@ const organised = [
     {subject:"Discrete Mathematics" , count:1}
 ];
 
-// before: notes scattered across chats -> after: one organised library
 export const Problem = () =>{
     return (
         <section className="max-w-6xl mx-auto px-4 md:px-6 py-20 md:py-28">
@@ -22,7 +20,6 @@ export const Problem = () =>{
             </div>
 
             <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center">
-                {/* before */}
                 <div className="relative rounded-2xl border border-dashed border-line bg-white/60 p-6 md:p-8 min-h-[320px]">
                     <p className="text-sm font-medium text-muted mb-5">Where notes are today</p>
                     <ul className="flex flex-col gap-3">
@@ -39,7 +36,6 @@ export const Problem = () =>{
                     <LuArrowRight className="w-5 h-5"/>
                 </div>
 
-                {/* after */}
                 <div className="rounded-2xl bg-white border border-line shadow-[0_20px_50px_-24px_rgba(28,43,58,0.35)] p-6 md:p-8 min-h-[320px]">
                     <div className="flex items-center justify-between mb-5">
                         <p className="text-sm font-medium text-primary">With Acadex</p>

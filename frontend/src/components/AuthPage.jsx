@@ -10,7 +10,6 @@ import { Api, useLoginMutation } from "../store/Api/Api";
 import { setUser, toggleLoginPopup } from "../store/slice/UserSlice";
 import { homePortal } from "./portal/portalLinks";
 
-// the three login panels
 const PANELS = {
     student:{
         tab:"Student",
@@ -44,38 +43,31 @@ const PANELS = {
     }
 };
 
-// the order of the tabs at the top of the popup
 const PANEL_KEYS = ["student" , "cr" , "admin"];
 
-// Login modal (no sign-up: the college registers every student)
 export const AuthPage = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
-    // which panel the login popup was opened with (kept in Redux so any button on the site can choose it)
     const initialRole = useSelector((state) => state.user.loginRole);
 
-    // use that panel if it exists, otherwise start on the Student panel
     let startRole = "student";
     if(PANELS[initialRole]){
         startRole = initialRole;
     }
 
-    const [role , setRole] = useState(startRole);                  // which panel is chosen: "student" , "cr" or "admin"
-    const [eyeOpen , setEyeOpen] = useState(false);                // true = the password is shown as text
-    const [authLoading , setAuthLoading] = useState(false);        // true while the login request is running
+    const [role , setRole] = useState(startRole);
+    const [eyeOpen , setEyeOpen] = useState(false);
+    const [authLoading , setAuthLoading] = useState(false);
     const [login] = useLoginMutation();
     const {register , handleSubmit , reset , formState:{errors}} = useForm();
     const panel = PANELS[role];
 
-    // runs every time the panel changes: empty the form so old text does not carry over
     useEffect(() =>{
         reset({identifier:"" , password:""});
     },[role , reset]);
 
-    //$ function to close the login popup
     const close = () => dispatch(toggleLoginPopup());
 
-    //$ function to handle login
     const handleOnSubmit = async (form) =>{
         try{
             setAuthLoading(true);
@@ -90,7 +82,6 @@ export const AuthPage = () =>{
                 dispatch(setUser(result.data));
                 toast.success(result.message);
                 close();
-                // CRs go to the CR portal, everyone else to their own home portal
                 if(role === "cr"){
                     Navigate("/cr");
                 }
@@ -107,23 +98,19 @@ export const AuthPage = () =>{
         }
     }
 
-    //$ function to show or hide the password
     const handleEyeClick = () => setEyeOpen(!eyeOpen);
 
     const field = "w-full px-3.5 py-3 rounded-xl border border-line bg-white text-[0.95rem] focus:outline-none focus:border-primary";
-    const passwordField = field + " pr-11";      // room on the right for the eye button
+    const passwordField = field + " pr-11";
 
-    // rules for the first box: admins type an email, students and CRs type a roll number
     let identifierRules = {required:"Enter your roll number"};
     if(role === "admin"){
         identifierRules = {
             required:"Enter your email",
-            // regular expression for an email: some text, then "@", then a domain such as "acadex.edu" (capital letters allowed)
             pattern:{value:/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i , message:"Enter a valid email"}
         };
     }
 
-    // the password box shows text or dots, and the eye button changes with it
     let passwordType = "password";
     let eyeLabel = "Show password";
     let eyeIcon = <LuEye className="w-4 h-4"/>;
@@ -133,7 +120,6 @@ export const AuthPage = () =>{
         eyeIcon = <LuEyeOff className="w-4 h-4"/>;
     }
 
-    // the CR panel uses the bronze colour, the others use the normal blue
     let submitClass = "w-full py-3 rounded-xl text-white font-semibold disabled:opacity-60 bg-primary hover:bg-primary-hover";
     if(role === "cr"){
         submitClass = "w-full py-3 rounded-xl text-white font-semibold disabled:opacity-60 bg-seal hover:bg-seal/90";
@@ -147,12 +133,10 @@ export const AuthPage = () =>{
     return (
         <Modal onClose={close} title={panel.title} description={panel.description}>
 
-            {/* panel switch */}
             <div className="grid grid-cols-3 p-1 rounded-xl bg-canvas border border-line mb-5" role="tablist" aria-label="Login as">
                 {PANEL_KEYS.map((key) =>{
                     const Icon = PANELS[key].icon;
 
-                    // the chosen tab is white; the CR tab uses the bronze colour
                     let tabClass = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm";
                     if(role !== key){
                         tabClass = tabClass + " text-muted hover:text-ink";
@@ -176,7 +160,6 @@ export const AuthPage = () =>{
             <form onSubmit={handleSubmit(handleOnSubmit)} className="flex flex-col gap-4" noValidate>
                 <div>
                     <label htmlFor="identifier" className="block text-sm font-medium mb-1.5">{panel.field}</label>
-                    {/* {...register(...)} connects this input to the form (its value and its rules) */}
                     <input id="identifier" autoComplete="username" className={field} placeholder={panel.placeholder}
                         {...register("identifier" , identifierRules)}/>
                     {errors.identifier && <p className="text-bad text-xs mt-1">{errors.identifier.message}</p>}

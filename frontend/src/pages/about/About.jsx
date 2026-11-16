@@ -3,19 +3,16 @@ import { LuCheck } from "react-icons/lu";
 import { openLoginPopup } from "../../store/slice/UserSlice";
 import { objectives, problems, youCan } from "./aboutData";
 
-// background (bg) and text (fg) colours for the three problem cards, in order
 const PROBLEM_COLORS = [
     {bg:"#fbe9ee" , fg:"#a8395a"},
     {bg:"#fbf1dc" , fg:"#9a6512"},
     {bg:"#efeafb" , fg:"#5b46a8"}
 ];
 
-// the About page: what Acadex is, why it was built and what students can do with it
 export const About = () =>{
     const dispatch = useDispatch();
     return (
         <main>
-            {/* intro band */}
             <section className="px-2 sm:px-4 pt-3">
                 <div className="relative bg-night dot-grid rounded-[28px] overflow-hidden">
                     <div aria-hidden="true" className="absolute -right-32 -top-32 w-[480px] h-[480px] rounded-full bg-night-soft blur-3xl"/>
@@ -36,7 +33,6 @@ export const About = () =>{
             </section>
 
             <div className="max-w-6xl mx-auto px-4 md:px-6">
-                {/* problems */}
                 <section className="mt-20">
                     <h2 className="text-3xl md:text-[2.4rem] leading-tight font-semibold max-w-xl">Why we built it</h2>
                     <div className="mt-8 grid md:grid-cols-3 gap-4">
@@ -49,7 +45,6 @@ export const About = () =>{
                     </div>
                 </section>
 
-                {/* goals */}
                 <section className="mt-20 grid gap-10 lg:grid-cols-[1fr_1.5fr]">
                     <div>
                         <h2 className="text-3xl md:text-[2.4rem] leading-tight font-semibold">What Acadex is for</h2>
@@ -70,7 +65,6 @@ export const About = () =>{
                     </ul>
                 </section>
 
-                {/* what you can do */}
                 <section className="mt-20 rounded-[28px] bg-primary-soft dot-grid-light p-8 md:p-12 grid gap-8 lg:grid-cols-[1fr_1.3fr] lg:items-center">
                     <div>
                         <h2 className="text-3xl md:text-[2.4rem] leading-tight font-semibold">What you can do</h2>

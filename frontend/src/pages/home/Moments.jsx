@@ -1,7 +1,6 @@
 import { LuAlarmClock, LuCalendarX, LuFileSearch, LuPenLine } from "react-icons/lu";
 import { moments } from "./homeData";
 
-// draws the right icon for a moment (picked by the moment's key)
 const MomentIcon = ({momentKey , className , style , ariaHidden}) =>{
     if(momentKey === "missed") return <LuCalendarX aria-hidden={ariaHidden} className={className} style={style}/>;
     if(momentKey === "exam") return <LuAlarmClock aria-hidden={ariaHidden} className={className} style={style}/>;
@@ -10,7 +9,6 @@ const MomentIcon = ({momentKey , className , style , ariaHidden}) =>{
     return null;
 }
 
-// everyday student situations and how Acadex helps
 export const Moments = () =>{
     return (
         <section className="max-w-6xl mx-auto px-4 md:px-6 pt-20 md:pt-28">
@@ -21,12 +19,10 @@ export const Moments = () =>{
 
             <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {moments.map((moment , index) =>{
-                    // data-aos-delay makes the cards fade in one after another (0ms, 80ms, 160ms, ...)
                     return (
                         <li key={moment.key} data-aos="fade-up" data-aos-delay={index * 80}
                             className="relative overflow-hidden rounded-2xl p-6 min-h-[230px] flex flex-col"
                             style={{background:moment.color.bg}}>
-                            {/* big faded icon in the corner */}
                             <MomentIcon momentKey={moment.key} ariaHidden="true" className="absolute -right-5 -bottom-5 w-32 h-32 opacity-[0.08]" style={{color:moment.color.fg}}/>
                             <span className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm" style={{color:moment.color.fg}}>
                                 <MomentIcon momentKey={moment.key} className="w-6 h-6"/>

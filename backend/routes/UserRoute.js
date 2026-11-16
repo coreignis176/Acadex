@@ -4,7 +4,6 @@ import { login, logout, getme, changepassword } from "../controllers/UserControl
 
 const router = express.Router();
 
-// mounted at /user
 router.route("/login").post(login);
 router.route("/logout").post(logout);
 router.route("/getme").get(validateUser , getme);

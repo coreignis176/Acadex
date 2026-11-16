@@ -1,14 +1,11 @@
 import { LuInbox } from "react-icons/lu";
 
-// generic empty / blocked state - always tells the person what to do next
 export const NoData = ({message , description , buttonText , onClick , icon , compact = false}) =>{
-    // less space above and below in compact mode
     let boxClass = "w-full flex flex-col items-center text-center py-20 px-6";
     if(compact){
         boxClass = "w-full flex flex-col items-center text-center py-10 px-6";
     }
 
-    // the given icon, or an inbox icon when none was given
     let shownIcon = <LuInbox/>;
     if(icon){
         shownIcon = icon;

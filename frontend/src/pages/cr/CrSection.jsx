@@ -7,9 +7,7 @@ import { Loader } from "../../components/Loader";
 import { NoData } from "../../components/NoData";
 import { initials } from "../../utils/format";
 
-// one student row: initials circle, name, roll number and role badge
 const StudentRow = ({student}) =>{
-    // CRs get a gold circle, other students a blue one
     let circleColors = "bg-primary-soft text-primary";
     if(student.crStatus === "active") circleColors = "bg-seal-soft text-seal";
     const circleClass = `w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${circleColors}`;
@@ -28,21 +26,17 @@ const StudentRow = ({student}) =>{
     )
 }
 
-// CR section page: list of the section's students with a search box
 export const CrSection = () =>{
-    const [stats , setStats] = useState(null); // the section info and students from the server (null until loaded)
-    const [search , setSearch] = useState(""); // the text typed in the search box
+    const [stats , setStats] = useState(null);
+    const [search , setSearch] = useState("");
     const {data , isLoading , isError , refetch} = useGetcrstatsQuery();
 
-    // runs whenever new data arrives from the server and copies the stats into state
     useEffect(() =>{
         if(data && data.success && data.data){
             setStats(data.data);
         }
     },[data]);
 
-    // the server answered with an error and we have nothing to show -> say so (and offer a retry)
-    // instead of spinning forever
     if(isError && !stats){
         return <NoData message="This page could not be loaded" description="Check your connection and try again." buttonText="Try again" onClick={refetch}/>;
     }
@@ -50,7 +44,6 @@ export const CrSection = () =>{
 
     const section = stats.section;
 
-    // students whose name or roll number contains the search text (all students when the box is empty)
     const searchText = search.trim().toLowerCase();
     const allStudents = stats.students || [];
     const students = allStudents.filter((student) =>{
@@ -60,7 +53,6 @@ export const CrSection = () =>{
         return false;
     });
 
-    // the list area: a "no match" message or the list of students
     let content;
     if(students.length === 0){
         content = <NoData compact message="No students match" description={`Nobody in ${section.name} matches "${search}".`} buttonText="Clear search" onClick={() => setSearch("")}/>;

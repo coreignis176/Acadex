@@ -6,14 +6,10 @@ import { useAddsubjectMutation, useCopysubjectsMutation, useRemovesubjectMutatio
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SubjectIcon } from "../../components/SubjectIcon";
 
-// react-hook-form rules shared by the "add" form and the "edit" form
 const NAME_RULES = {required:"Enter the subject name" , validate:(value) => (value.trim().length >= 2 && value.trim().length <= 60) || "Use 2-60 characters"};
-// subject code: 3 to 12 letters, digits or "-" (spaces before or after are allowed)
 const CODE_RULES = {required:"Enter the subject code" , pattern:{value:/^\s*[A-Za-z0-9-]{3,12}\s*$/ , message:"3-12 letters, digits or hyphens, e.g. TCS355"}};
 const field = "w-full px-3.5 py-2.5 rounded-xl border border-line bg-white text-sm focus:outline-none focus:border-primary";
 
-//$ function to run a mutation with toast feedback; gives back true on success and false on failure
-// "call" is a function that starts the mutation , "fallback" is the error text when the server sends none
 const attempt = async (call , fallback) =>{
     try{
         const result = await call().unwrap();
@@ -26,14 +22,12 @@ const attempt = async (call , fallback) =>{
     }
 }
 
-// one subject row: shows the code and name, or a small edit form while "editing" is true
 const SubjectRow = ({subject , sectionId , onRemove}) =>{
-    const [editing , setEditing] = useState(false);   // true while the edit form is showing
-    const [saving , setSaving] = useState(false);     // true while the server saves the change
+    const [editing , setEditing] = useState(false);
+    const [saving , setSaving] = useState(false);
     const [updatesubject] = useUpdatesubjectMutation();
     const {register , handleSubmit , reset , formState:{errors}} = useForm({defaultValues:{name:subject.name , code:subject.code}});
 
-    //$ function to save the edited subject
     const save = async (form) =>{
         setSaving(true);
         const done = await attempt(() => updatesubject({sectionId , subjectId:subject._id , name:form.name , code:form.code}) , "Could Not Update The Subject");
@@ -41,7 +35,6 @@ const SubjectRow = ({subject , sectionId , onRemove}) =>{
         if(done) setEditing(false);
     }
 
-    //$ function to throw away the changes and leave edit mode
     const cancelEdit = () =>{
         reset();
         setEditing(false);
@@ -52,7 +45,6 @@ const SubjectRow = ({subject , sectionId , onRemove}) =>{
             <form onSubmit={handleSubmit(save)} noValidate className="grid gap-3 sm:grid-cols-[150px_1fr_auto] sm:items-start">
                 <div>
                     <label className="sr-only" htmlFor={`code-${subject._id}`}>Subject Code</label>
-                    {/* {...register(...)} connects this input to the form and gives it its rules */}
                     <input id={`code-${subject._id}`} className={`${field} uppercase`} {...register("code" , CODE_RULES)}/>
                     {errors.code && <p className="text-bad text-xs mt-1">{errors.code.message}</p>}
                 </div>
@@ -83,37 +75,32 @@ const SubjectRow = ({subject , sectionId , onRemove}) =>{
     );
 }
 
-// subjects of one section: students can only upload notes for these
 export const SectionSubjects = ({section , subjects , siblings}) =>{
     const [addsubject] = useAddsubjectMutation();
     const [removesubject] = useRemovesubjectMutation();
     const [copysubjects] = useCopysubjectsMutation();
-    const [adding , setAdding] = useState(false);       // true while the server adds a subject
-    const [removing , setRemoving] = useState(null);    // the subject waiting for "Remove?" confirmation
-    const [working , setWorking] = useState(false);     // true while the server removes or copies subjects
+    const [adding , setAdding] = useState(false);
+    const [removing , setRemoving] = useState(null);
+    const [working , setWorking] = useState(false);
 
-    // other sections of the same year that already have subjects we could copy
     const copyable = siblings.filter((sibling) => sibling.subjectCount > 0);
-    // the copy dropdown starts on the first of them (or nothing when there is none)
     let firstCopyable = "";
     if(copyable.length > 0){
         firstCopyable = copyable[0]._id;
     }
-    const [copyFrom , setCopyFrom] = useState(firstCopyable);   // _id of the section picked in the copy dropdown
+    const [copyFrom , setCopyFrom] = useState(firstCopyable);
     const {register , handleSubmit , reset , setFocus , formState:{errors}} = useForm({defaultValues:{name:"" , code:""}});
 
-    //$ function to add a subject
     const handleAdd = async (form) =>{
         setAdding(true);
         const done = await attempt(() => addsubject({sectionId:section._id , name:form.name , code:form.code}) , "Could Not Add The Subject");
         setAdding(false);
         if(done){
-            reset();              // empty the form
-            setFocus("name");     // put the cursor back in "Subject Name" for the next one
+            reset();
+            setFocus("name");
         }
     }
 
-    //$ function to remove the chosen subject
     const handleRemove = async () =>{
         setWorking(true);
         await attempt(() => removesubject({sectionId:section._id , subjectId:removing._id}) , "Could Not Remove The Subject");
@@ -121,14 +108,12 @@ export const SectionSubjects = ({section , subjects , siblings}) =>{
         setRemoving(null);
     }
 
-    //$ function to copy subjects from a sibling section
     const handleCopy = async () =>{
         setWorking(true);
         await attempt(() => copysubjects({sectionId:section._id , fromSectionId:copyFrom}) , "Could Not Copy The Subjects");
         setWorking(false);
     }
 
-    // the "Copy subjects from ..." bar. It stays false (renders nothing) when there is no section to copy from
     let copyBar = false;
     if(copyable.length > 0){
         copyBar = (
@@ -144,13 +129,11 @@ export const SectionSubjects = ({section , subjects , siblings}) =>{
         );
     }
 
-    // "subject" or "subjects"
     let subjectWord = "subjects";
     if(subjects.length === 1){
         subjectWord = "subject";
     }
 
-    // the list of subjects, or a message (and the copy bar) when there are none yet
     let listContent;
     if(subjects.length === 0){
         listContent = (
@@ -172,7 +155,6 @@ export const SectionSubjects = ({section , subjects , siblings}) =>{
 
     return (
         <div className="flex flex-col gap-5">
-            {/* add form */}
             {!section.archived && (
                 <form onSubmit={handleSubmit(handleAdd)} noValidate className="bg-white border border-line rounded-2xl p-5">
                     <p className="font-semibold">Add a subject</p>
@@ -180,7 +162,6 @@ export const SectionSubjects = ({section , subjects , siblings}) =>{
                     <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-start">
                         <div>
                             <label htmlFor="sub-name" className="block text-sm font-medium mb-1.5">Subject Name</label>
-                            {/* {...register(...)} connects this input to the form and gives it its rules */}
                             <input id="sub-name" className={field} placeholder="e.g. Database Management Systems" {...register("name" , NAME_RULES)}/>
                             {errors.name && <p className="text-bad text-xs mt-1">{errors.name.message}</p>}
                         </div>
@@ -197,7 +178,6 @@ export const SectionSubjects = ({section , subjects , siblings}) =>{
                 </form>
             )}
 
-            {/* list */}
             <div className="bg-white border border-line rounded-2xl overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-line">
                     <p className="font-semibold">{subjects.length} {subjectWord} in {section.name}</p>

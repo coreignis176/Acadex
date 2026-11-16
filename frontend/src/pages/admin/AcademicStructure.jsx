@@ -16,13 +16,11 @@ import { formatDate } from "../../utils/format";
 
 const ROOT = {label:"Academic Structure" , to:"/admin/structure"};
 
-// adds up every year of a course, counting only the active (not archived) sections
-// key = "sections" -> how many sections , key = "students" -> how many students
 const sumYears = (years , key) =>{
     let total = 0;
     for(const year of years){
         for(const section of year.sections){
-            if(section.archived) continue;   // skip archived sections
+            if(section.archived) continue;
             if(key === "sections"){
                 total = total + 1;
             }
@@ -34,8 +32,6 @@ const sumYears = (years , key) =>{
     return total;
 }
 
-// ---------- level 1: courses ----------
-// shows one card per course (B.Tech, BBA, ...) with its section and student totals
 const CourseList = ({courses}) => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {courses.map((course) => (
@@ -64,21 +60,16 @@ const CourseList = ({courses}) => (
     </div>
 );
 
-// ---------- level 2: academic years ----------
-// shows the years of one course (1st Year, 2nd Year, ...) as a list
 const YearList = ({course}) => (
     <ol className="bg-white border border-line rounded-xl divide-y divide-line">
         {course.years.map((year) =>{
-            // only the sections that are not archived
             const active = year.sections.filter((section) => !section.archived);
 
-            // total students in those sections
             let students = 0;
             for(const section of active){
                 students = students + section.students;
             }
 
-            // names of the sections, e.g. "A, B, C"
             let sectionNames = "No sections yet";
             if(active.length > 0){
                 sectionNames = active.map((section) => section.name).join(", ");
@@ -106,19 +97,15 @@ const YearList = ({course}) => (
     </ol>
 );
 
-// one row of the section list: name, counts and the buttons for that section
 const SectionRow = ({section , label , working , onArchive , onRestore}) =>{
     const dispatch = useDispatch();
 
-    //$ function to open the "Rename section" popup
     const handleRename = () =>{
         dispatch(setSectionPopup({mode:"rename" , sectionId:section._id , name:section.name , label}));
     }
 
-    // CR positions taken = confirmed CRs + requests still waiting for the student
     const used = section.crs + section.pendingCrs;
 
-    // the small line of text under "x of 2 CR"
     let crText;
     if(section.pendingCrs){
         crText = `${section.pendingCrs} awaiting confirmation`;
@@ -130,25 +117,21 @@ const SectionRow = ({section , label , working , onArchive , onRestore}) =>{
         crText = "Position open";
     }
 
-    // archived rows get a grey background
     let rowClass = "flex flex-col md:flex-row md:items-center gap-3 px-5 py-4 ";
     if(section.archived){
         rowClass = rowClass + "bg-canvas/60";
     }
 
-    // a section without subjects shows its 0 in the "waiting" colour
     let subjectCountClass = "font-semibold tabular-nums ";
     if(!section.subjectCount){
         subjectCountClass = subjectCountClass + "text-wait";
     }
 
-    // a section with a confirmed CR shows the number in the "seal" colour
     let crCountClass = "font-semibold tabular-nums ";
     if(section.crs){
         crCountClass = crCountClass + "text-seal";
     }
 
-    // buttons: an active section can be opened / renamed / archived, an archived one can only be restored
     let buttons;
     if(!section.archived){
         buttons = (
@@ -206,21 +189,17 @@ const SectionRow = ({section , label , working , onArchive , onRestore}) =>{
     )
 }
 
-// ---------- level 3: sections of a year ----------
-// shows the sections of one year with buttons to open, rename, archive or restore them
 const SectionList = ({course , year}) =>{
     const dispatch = useDispatch();
-    const [showArchived , setShowArchived] = useState(false);   // is "Show archived" ticked?
-    const [confirm , setConfirm] = useState(null);              // the section waiting for "Archive?" confirmation
-    const [working , setWorking] = useState(false);             // true while the server is archiving / restoring
+    const [showArchived , setShowArchived] = useState(false);
+    const [confirm , setConfirm] = useState(null);
+    const [working , setWorking] = useState(false);
     const [archivesection] = useArchivesectionMutation();
 
     const archivedCount = year.sections.filter((section) => section.archived).length;
-    // archived sections are listed only when "Show archived" is ticked
     const sections = year.sections.filter((section) => showArchived || !section.archived);
     const label = `${course.name} ${year.label}`;
 
-    //$ function to archive or restore a section
     const handleArchive = async (section , archived) =>{
         try{
             setWorking(true);
@@ -237,22 +216,18 @@ const SectionList = ({course , year}) =>{
         }
     }
 
-    //$ function to restore an archived section
     const handleRestore = (section) =>{
         handleArchive(section , false);
     }
 
-    //$ function to archive the section after the admin confirmed
     const handleConfirmArchive = () =>{
         handleArchive(confirm , true);
     }
 
-    //$ function to open the "Add section" popup for this year
     const handleAddSection = () =>{
         dispatch(setSectionPopup({mode:"add" , courseId:course._id , year:year.year , label}));
     }
 
-    // the list itself, or an empty message when there are no sections
     let listContent;
     if(sections.length === 0){
         listContent = (
@@ -272,7 +247,6 @@ const SectionList = ({course , year}) =>{
         );
     }
 
-    // text of the "Archive?" dialog: a section that still has students can't be archived yet
     let confirmMessage = "";
     if(confirm){
         if(confirm.students > 0){
@@ -306,40 +280,30 @@ const SectionList = ({course , year}) =>{
     )
 }
 
-// the Academic Structure page: courses -> years -> sections, picked from the URL
-// /admin/structure                  -> list of courses
-// /admin/structure/:courseId        -> years of that course
-// /admin/structure/:courseId/:year  -> sections of that year
 export const AcademicStructure = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const {courseId , year} = useParams();
     const sectionPopup = useSelector((state) => state.portal.sectionPopup);
-    const [courses , setCourses] = useState([]);    // every course with its years and sections
+    const [courses , setCourses] = useState([]);
     const {data , isLoading , isError , refetch} = useGetstructureQuery();
 
-    // runs every time new data arrives from the server and copies the course list into state
     useEffect(() =>{
         if(data && data.success && data.data){
             setCourses(data.data);
         }
     },[data]);
 
-    // the server answered with an error and we have nothing to show -> say so (and offer a retry)
-    // instead of spinning forever
     if(isError && !courses.length){
         return <NoData message="This page could not be loaded" description="Check your connection and try again." buttonText="Try again" onClick={refetch}/>;
     }
-    // keep showing the loader until the first answer from the server arrives
     if(isLoading || (!courses.length && !data)) return <Loader/>;
 
-    // the course named in the URL (if any)
     let course = null;
     if(courseId){
         course = courses.find((item) => item._id === courseId);
     }
 
-    // the year named in the URL (if any). The URL gives text, so compare both as text
     let yearData = null;
     if(course && year){
         yearData = course.years.find((item) => String(item.year) === String(year));
@@ -350,13 +314,11 @@ export const AcademicStructure = () =>{
     if(course && year && !yearData) return <NoData message={`${course.name} has no such year`} description={`${course.name} runs for ${course.duration} years.`}
         buttonText={`Back to ${course.name}`} onClick={() => Navigate(`/admin/structure/${course._id}`)}/>;
 
-    // pick the page title and the list to show, depending on how deep the URL goes
     let header;
     let body;
     if(yearData){
         const label = `${course.name} ${yearData.label}`;
 
-        //$ function to open the "Add section" popup for this year
         const handleAddSection = () =>{
             dispatch(setSectionPopup({mode:"add" , courseId:course._id , year:yearData.year , label}));
         }
@@ -380,7 +342,6 @@ export const AcademicStructure = () =>{
         body = <CourseList courses={courses}/>;
     }
 
-    // the section popup is opened through Redux: false = closed , mode "add" = new section , mode "rename" = rename one
     let popupMode = null;
     if(sectionPopup){
         popupMode = sectionPopup.mode;

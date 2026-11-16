@@ -1,5 +1,3 @@
-// static content for the About page (student point of view)
-
 export const objectives = [
     {title:"Notes by subject and topic" , text:"Every note sits under its subject, and you can search any topic in seconds."},
     {title:"Open to every student" , text:"Everyone in your class sees the same notes, not just the people in the right group chat."},

@@ -5,7 +5,6 @@ import { PiSealCheck } from "react-icons/pi";
 import { useMarknotificationsreadMutation, useRespondcrMutation } from "../store/Api/Api";
 import { timeAgo } from "../utils/format";
 
-// icon and colours for each kind of notification
 const ICONS = {
     cr:{icon:PiSealCheck , tone:"bg-seal-soft text-seal"},
     notes:{icon:LuBookOpen , tone:"bg-primary-soft text-primary"},
@@ -14,12 +13,10 @@ const ICONS = {
     group:{icon:LuUsersRound , tone:"bg-ok-soft text-ok"}
 };
 
-// Confirm / Not me buttons for the "Admin has identified you as CR" notification
 export const CrConfirmActions = ({size = "md"}) =>{
     const [respondcr] = useRespondcrMutation();
-    const [busy , setBusy] = useState(null);       // "yes" / "no" while sending, otherwise null
+    const [busy , setBusy] = useState(null);
 
-    //$ function to confirm or reject the CR appointment
     const handleRespond = async (accept) =>{
         try{
             if(accept){
@@ -39,20 +36,16 @@ export const CrConfirmActions = ({size = "md"}) =>{
         }
     }
 
-    // stopPropagation() stops the click from also reaching the notification row around these buttons
-    //$ function for the "Confirm appointment" button
     const handleConfirm = (event) =>{
         event.stopPropagation();
         handleRespond(true);
     }
 
-    //$ function for the "Not me" button
     const handleNotMe = (event) =>{
         event.stopPropagation();
         handleRespond(false);
     }
 
-    // smaller buttons inside the bell dropdown
     let pad = "px-4 py-2 text-sm";
     if(size === "sm"){
         pad = "px-3 py-1.5 text-xs";
@@ -77,16 +70,13 @@ export const CrConfirmActions = ({size = "md"}) =>{
     )
 }
 
-// one notification in the list: icon, title, time, message and (for CR appointments) the answer buttons
 const NotificationItem = ({item , compact , onOpen}) =>{
-    // unknown kinds use the grey "section" look
     let meta = ICONS.section;
     if(ICONS[item.type]){
         meta = ICONS[item.type];
     }
     const Icon = meta.icon;
 
-    // compact rows have less space; unread rows have a light blue background
     let padding = "px-5 py-4";
     if(compact) padding = "px-4 py-3";
     let unreadClass = "";
@@ -95,16 +85,13 @@ const NotificationItem = ({item , compact , onOpen}) =>{
 
     const iconClass = "w-9 h-9 shrink-0 rounded-lg flex items-center justify-center " + meta.tone;
 
-    // unread titles are bolder
     let titleClass = "text-sm font-semibold";
     if(item.read) titleClass = "text-sm font-medium";
 
-    // in compact mode the message is cut after two lines
     let clamp = "";
     if(compact) clamp = "line-clamp-2";
     const messageClass = "text-sm text-muted mt-0.5 " + clamp;
 
-    // the "Admin has identified you as CR" notification gets Confirm / Not me buttons
     let isCrConfirm = false;
     if(item.action && item.action.kind === "cr-confirm"){
         isCrConfirm = true;
@@ -134,11 +121,9 @@ const NotificationItem = ({item , compact , onOpen}) =>{
     )
 }
 
-// a list of notifications (compact = the smaller version used in the bell dropdown)
 export const NotificationList = ({items , compact = false}) =>{
     const [markread] = useMarknotificationsreadMutation();
 
-    //$ function to mark a notification as read when opened
     const handleOpen = (item) =>{
         if(!item.read) markread({id:item._id});
     }

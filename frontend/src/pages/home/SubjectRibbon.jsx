@@ -5,26 +5,21 @@ import { openLoginPopup } from "../../store/slice/UserSlice";
 import { subjectColor } from "../../utils/subjects";
 import { allSubjects } from "./homeData";
 
-// two endless rows of subject chips - "whatever you study, it's here"
 export const SubjectRibbon = () =>{
     const Navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector((state) => state.user.user);
 
-    // split the subjects into two rows: the first half and the second half
     const half = Math.ceil(allSubjects.length / 2);
     const rows = [allSubjects.slice(0 , half) , allSubjects.slice(half)];
 
-    //$ function to open a subject's notes
     const openSubject = (subject) =>{
         if(user && user.role === "student") Navigate(`/student?subject=${encodeURIComponent(subject)}`);
         else dispatch(openLoginPopup("student"));
     }
 
-    // one subject chip; keys starting with "b" are the duplicate copy used for the endless scroll
     const chip = (subject , key) =>{
         const colors = subjectColor(subject);
-        // the copy is hidden from screen readers and skipped by the Tab key
         let hidden = undefined;
         let tabIndex = 0;
         if(key.startsWith("b")){
@@ -51,14 +46,12 @@ export const SubjectRibbon = () =>{
             </div>
 
             <div className="marquee-wrap fade-edges mt-10 flex flex-col gap-3 overflow-hidden">
-                {/* the first row scrolls left, the second row scrolls right */}
                 {rows.map((row , rowIndex) =>{
                     let rowClass = "flex gap-3 w-max marquee-reverse";
                     if(rowIndex === 0) rowClass = "flex gap-3 w-max marquee";
                     return (
                         <ul key={rowIndex} className={rowClass}>
                             {row.map((subject) => chip(subject , `a-${subject}`))}
-                            {/* duplicate for a seamless loop (hidden from screen readers) */}
                             {row.map((subject) => chip(subject , `b-${subject}`))}
                         </ul>
                     )

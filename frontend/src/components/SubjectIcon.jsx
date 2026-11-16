@@ -1,6 +1,5 @@
 import { subjectColor, subjectIcon } from "../utils/subjects";
 
-// coloured square with the subject's icon (size = tailwind w/h classes)
 export const SubjectIcon = ({subject , size = "w-10 h-10" , iconSize = "w-5 h-5" , rounded = "rounded-lg"}) =>{
     const color = subjectColor(subject);
     const Icon = subjectIcon(subject);

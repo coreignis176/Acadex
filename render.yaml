@@ -1,13 +1,3 @@
-# Render "Blueprint": how to run the Acadex BACKEND on render.com
-# (Render -> New -> Blueprint -> pick this GitHub repo; it reads this file)
-#
-# The frontend is NOT here - it goes on Vercel (see README.md "Going live").
-#
-# While building, Render:
-#   1. installs the backend's npm packages
-#   2. compiles our C / C++ programs for Linux (connect_pbl/compile.sh)
-# If a C / C++ program does not compile, the build FAILS - so a broken program never goes live.
-
 services:
   - type: web
     name: acadex-backend
@@ -18,23 +8,19 @@ services:
     startCommand: node index.js
     healthCheckPath: /
     envVars:
-      # sync:false = Render asks you to type the value (secrets never go in GitHub)
       - key: DATABASE_URL
         sync: false
-      - key: FRONTEND_URL            # the Vercel address, e.g. https://acadex.vercel.app (no "/" at the end)
+      - key: FRONTEND_URL
         sync: false
       - key: DEFAULT_STUDENT_PASSWORD
         sync: false
-      # ADMIN_NAME / ADMIN_EMAIL / ADMIN_PASSWORD are optional here. When the server starts it makes the
-      # admin account match them (utils/syncAdmin.js). If they are missing it changes nothing.
-      # We keep them only in the local .env: the live site uses the same database, so it gets the same admin.
       - key: CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_SECRET_KEY
         sync: false
-      - key: JWT_SECRET              # Render makes a long random secret by itself
+      - key: JWT_SECRET
         generateValue: true
       - key: NODE_VERSION
         value: "22"

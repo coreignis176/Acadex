@@ -1,7 +1,6 @@
 import { LuLayers } from "react-icons/lu";
 import { NoData } from "../../components/NoData";
 
-// shown on student pages when the admin has removed the student from their section
 export const NoSection = () =>{
     return (
         <div className="bg-white border border-line rounded-xl">

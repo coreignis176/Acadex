@@ -8,14 +8,12 @@ import { handleNoteDownload } from "../utils/noteActions";
 import { formatDate } from "../utils/format";
 import { subjectColor } from "../utils/subjects";
 
-// one note on the All Notes page
 export const NoteCard = ({note , onView , mySection}) =>{
     const [reactnote] = useReactnoteMutation();
-    const [busy , setBusy] = useState(false);       // true while the like is being saved
+    const [busy , setBusy] = useState(false);
     const color = subjectColor(note.subject);
     const liked = note.myReaction === "like";
 
-    //$ function to like a note (click again to undo)
     const handleLike = async () =>{
         try{
             setBusy(true);
@@ -29,13 +27,11 @@ export const NoteCard = ({note , onView , mySection}) =>{
         }
     }
 
-    // the like button is blue when I already liked the note
     let likeClass = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm tabular-nums border border-transparent text-muted hover:bg-canvas hover:text-ink";
     if(liked){
         likeClass = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm tabular-nums border bg-primary-soft border-primary/30 text-primary";
     }
 
-    // the user's own section is highlighted and marked "(yours)"
     let sectionClass = "";
     let yoursText = "";
     if(note.sectionName === mySection){
