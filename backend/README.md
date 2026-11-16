@@ -21,9 +21,8 @@ npm run dev           # http://localhost:9999  ->  "api working"
 * Every reply is `{ success , message , data }`.
 * Status codes: `400` wrong input, `401` not logged in, `403` not allowed, `404` not found,
   `422` CSV rows need fixing (`data.errors = [{row , message}]`), `501` server error.
-* New students (and students whose password the admin reset) get `mustChangePassword: true`.
-  Until they call `/user/changepassword`, every other route answers `403` with
-  `data.mustChangePassword = true`, except `/user/getme`.
+* Students can log in with the default password and use the portal right away.
+  Changing the password (`/user/changepassword`) is optional.
 
 ## Routes
 

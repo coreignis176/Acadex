@@ -22,12 +22,6 @@ export const validateUser = async(req , res , next) =>{
             return res.status(401).send({success:false , message:"Please Log In To Continue."});
         }
 
-        const path = req.originalUrl.split("?")[0];
-        const allowed = ["/user/changepassword" , "/user/getme"];
-        if(user.mustChangePassword && !allowed.includes(path)){
-            return res.status(403).send({success:false , message:"Please Change Your Password First." , data:{mustChangePassword:true}});
-        }
-
         req.userId = user._id;
         req.user = user;
         next();

@@ -48,17 +48,6 @@ export const PortalLayout = ({portal}) =>{
     if(isLoading){
         page = <Loader/>;
     }
-    else if(user.mustChangePassword){
-        page = (
-            <div className="max-w-md mx-auto bg-white border border-line rounded-2xl p-6 md:p-8">
-                <h1 className="text-2xl font-semibold">Choose your own password</h1>
-                <p className="text-sm text-muted mt-1 mb-6">
-                    You are using the default password the college gave you. Pick a new one that only you know before you continue.
-                </p>
-                <ChangePassword/>
-            </div>
-        );
-    }
     else if(crBlocked){
         let description = "Only confirmed Class Representatives can open the CR portal. Your student portal is still available.";
         if(user.crStatus === "pending") description = "Confirm your CR appointment from your notifications to open the CR portal.";
@@ -90,7 +79,7 @@ export const PortalLayout = ({portal}) =>{
 
             {notePopup && portal !== "admin" && <NotePopup/>}
 
-            {passwordPopup && !user.mustChangePassword && (
+            {passwordPopup && (
                 <Modal title="Change password" description="Choose a password with at least 8 characters, a letter and a number." onClose={closePasswordPopup}>
                     <ChangePassword onDone={closePasswordPopup}/>
                 </Modal>
